@@ -1,7 +1,3 @@
-import { GoogleGenAI } from "@google/genai";
-
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-
 export const CBT_SYSTEM_INSTRUCTION = `
 You are "Bro Therapist", a supportive, friendly, and professional CBT (Cognitive Behavioral Therapy) therapist.
 Your tone is "bro-like" but deeply empathetic and professional—think of a wise, supportive older brother who is also a trained therapist.
@@ -21,15 +17,22 @@ Example Tone:
 `;
 
 export async function generateCBTResponse(history: { role: "user" | "model"; parts: { text: string }[] }[]) {
-  const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
-    contents: history,
-    config: {
-      systemInstruction: CBT_SYSTEM_INSTRUCTION,
-      temperature: 0.7,
-    },
+  const response = await fetch('/api/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      history,
+      systemInstruction: CBT_SYSTEM_INSTRUCTION
+    })
   });
-  return response.text;
+  
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to generate response');
+  }
+  
+  const data = await response.json();
+  return data.text;
 }
 
 export async function generateGoalReport(goals: any[], language: "ru" | "en") {
@@ -37,12 +40,20 @@ export async function generateGoalReport(goals: any[], language: "ru" | "en") {
     ? `Проанализируй мои цели и прогресс: ${JSON.stringify(goals)}. Дай краткий отчет, похвали за успехи и дай советы по улучшению.`
     : `Analyze my goals and progress: ${JSON.stringify(goals)}. Provide a short report, praise successes, and give suggestions for improvement.`;
 
-  const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
-    contents: prompt,
-    config: {
-      systemInstruction: "You are an AI productivity coach and therapist. Be encouraging and analytical.",
-    },
+  const response = await fetch('/api/goals/report', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      prompt,
+      systemInstruction: "You are an AI productivity coach and therapist. Be encouraging and analytical."
+    })
   });
-  return response.text;
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to generate report');
+  }
+
+  const data = await response.json();
+  return data.text;
 }
