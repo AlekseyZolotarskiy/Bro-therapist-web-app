@@ -9,28 +9,41 @@ const __dirname = path.dirname(__filename);
 async function startServer() {
   const app = express();
   const PORT = process.env.PORT || 3000;
+  const isProd = process.env.NODE_ENV === "production" || process.env.VITE_USER_NODE_ENV === "production";
 
-  // API routes can go here if needed in the future
+  console.log(`Starting server in ${isProd ? 'production' : 'development'} mode`);
+
+  // API routes
   app.get("/api/health", (req, res) => {
-    res.json({ status: "ok" });
+    res.json({ status: "ok", env: process.env.NODE_ENV });
   });
 
-  if (process.env.NODE_ENV !== "production") {
+  if (!isProd) {
+    console.log("Using Vite middleware for development");
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
     });
     app.use(vite.middlewares);
   } else {
-    const distPath = path.join(process.cwd(), 'dist');
+    const distPath = path.resolve(__dirname, 'dist');
+    console.log(`Serving static files from: ${distPath}`);
+    
     app.use(express.static(distPath));
+    
     app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
+      const indexPath = path.join(distPath, 'index.html');
+      res.sendFile(indexPath, (err) => {
+        if (err) {
+          console.error(`Error sending index.html from ${indexPath}:`, err);
+          res.status(500).send("Error loading application. Make sure 'npm run build' was executed.");
+        }
+      });
     });
   }
 
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://0.0.0.0:${PORT}`);
+    console.log(`Server listening on port ${PORT}`);
   });
 }
 
