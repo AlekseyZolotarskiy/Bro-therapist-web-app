@@ -1,0 +1,105 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Stores user preferences and profile information.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "preferredLanguage": { "type": "string", "enum": ["ru", "en"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email"]
+    },
+    "ChatMessage": {
+      "title": "Chat Message",
+      "description": "A single message in a chat session.",
+      "type": "object",
+      "properties": {
+        "role": { "type": "string", "enum": ["user", "model"] },
+        "text": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["role", "text", "createdAt"]
+    },
+    "JournalEntry": {
+      "title": "Journal Entry",
+      "description": "Daily morning and evening journal entries.",
+      "type": "object",
+      "properties": {
+        "date": { "type": "string", "format": "date" },
+        "morning": {
+          "type": "object",
+          "properties": {
+            "q1": { "type": "string" },
+            "q2": { "type": "string" }
+          }
+        },
+        "evening": {
+          "type": "object",
+          "properties": {
+            "q1": { "type": "string" },
+            "q2": { "type": "string" }
+          }
+        }
+      },
+      "required": ["date"]
+    },
+    "Goal": {
+      "title": "Goal",
+      "description": "A user goal with sub-tasks.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "deadline": { "type": "string" },
+        "completed": { "type": "boolean" },
+        "tasks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "text": { "type": "string" },
+              "completed": { "type": "boolean" }
+            }
+          }
+        },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "completed"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile document."
+    },
+    "/users/{userId}/chats/{chatId}/messages/{messageId}": {
+      "schema": "ChatMessage",
+      "description": "Messages in a specific chat session."
+    },
+    "/users/{userId}/journal/{date}": {
+      "schema": "JournalEntry",
+      "description": "Daily journal entries."
+    },
+    "/users/{userId}/goals/{goalId}": {
+      "schema": "Goal",
+      "description": "User goals."
+    },
+    "/users/{userId}/events/{eventId}": {
+      "schema": {
+        "type": "object",
+        "properties": {
+          "event": { "type": "string" },
+          "metadata": { "type": "object" },
+          "timestamp": { "type": "string", "format": "date-time" },
+          "path": { "type": "string" }
+        }
+      },
+      "description": "App events logged by the user."
+    }
+  }
+}
