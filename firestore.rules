@@ -39,5 +39,10 @@ service cloud.firestore {
         allow read, write: if isOwner(userId);
       }
     }
+
+    match /support_requests/{requestId} {
+      allow create: if request.auth != null;
+      allow read: if false; // Only admin can read (via Firebase Console)
+    }
   }
 }

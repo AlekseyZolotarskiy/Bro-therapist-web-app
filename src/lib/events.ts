@@ -3,6 +3,7 @@ import { db, auth } from '../firebase';
 
 export type AppEvent = 
   | 'goal_created' 
+  | 'promise_created'
   | 'goal_completed' 
   | 'journal_saved' 
   | 'chat_started' 

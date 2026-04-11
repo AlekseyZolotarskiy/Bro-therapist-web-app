@@ -100,6 +100,20 @@
         }
       },
       "description": "App events logged by the user."
+    },
+    "/support_requests/{requestId}": {
+      "schema": {
+        "type": "object",
+        "properties": {
+          "userId": { "type": "string" },
+          "userEmail": { "type": "string" },
+          "contact": { "type": "string" },
+          "platform": { "type": "string", "enum": ["telegram", "whatsapp"] },
+          "message": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "description": "Support and donation requests."
     }
   }
 }

@@ -35,6 +35,8 @@ const translations: Record<Language, Record<string, string>> = {
     'common.save': 'Сохранить',
     'common.cancel': 'Отмена',
     'common.delete': 'Удалить',
+    'journal.today': 'Сегодня',
+    'journal.history': 'История',
   },
   en: {
     'app.name': 'Bro Therapist',
@@ -62,6 +64,8 @@ const translations: Record<Language, Record<string, string>> = {
     'common.save': 'Save',
     'common.cancel': 'Cancel',
     'common.delete': 'Delete',
+    'journal.today': 'Today',
+    'journal.history': 'History',
   }
 };
 

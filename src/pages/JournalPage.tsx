@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Sun, Moon, Save, Edit2, Calendar } from 'lucide-react';
-import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { Sun, Moon, Save, Edit2, Calendar, ChevronLeft, ChevronRight, History } from 'lucide-react';
+import { doc, onSnapshot, setDoc, collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { Button } from '../components/Button';
 import { logAppEvent } from '../lib/events';
-import { format } from 'date-fns';
+import { format, subDays, addDays, parseISO } from 'date-fns';
 import { ru, enUS } from 'date-fns/locale';
+import { cn } from '../lib/utils';
 
 export const JournalPage: React.FC = () => {
   const { user } = useAuth();
@@ -16,59 +17,134 @@ export const JournalPage: React.FC = () => {
   const [morning, setMorning] = useState({ q1: '', q2: '' });
   const [evening, setEvening] = useState({ q1: '', q2: '' });
   const [editing, setEditing] = useState({ morning: true, evening: true });
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [history, setHistory] = useState<string[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
 
   const dateLocale = language === 'ru' ? ru : enUS;
-  const todayDate = format(new Date(), 'yyyy-MM-dd');
-  const todayDisplay = format(new Date(), 'd MMMM, EEEE', { locale: dateLocale });
+  const dateKey = format(selectedDate, 'yyyy-MM-dd');
+  const dateDisplay = format(selectedDate, 'd MMMM, EEEE', { locale: dateLocale });
+  const isToday = format(new Date(), 'yyyy-MM-dd') === dateKey;
 
   useEffect(() => {
     if (!user) return;
 
-    const unsubscribe = onSnapshot(doc(db, `users/${user.uid}/journal/${todayDate}`), (snapshot) => {
+    // Fetch history list
+    const fetchHistory = async () => {
+      const q = query(
+        collection(db, `users/${user.uid}/journal`),
+        orderBy('date', 'desc'),
+        limit(10)
+      );
+      const snapshot = await getDocs(q);
+      setHistory(snapshot.docs.map(doc => doc.id));
+    };
+    fetchHistory();
+
+    const unsubscribe = onSnapshot(doc(db, `users/${user.uid}/journal/${dateKey}`), (snapshot) => {
       if (snapshot.exists()) {
         const data = snapshot.data();
-        if (data.morning) {
-          setMorning(data.morning);
-          setEditing(prev => ({ ...prev, morning: false }));
-        }
-        if (data.evening) {
-          setEvening(data.evening);
-          setEditing(prev => ({ ...prev, evening: false }));
-        }
+        setMorning(data.morning || { q1: '', q2: '' });
+        setEvening(data.evening || { q1: '', q2: '' });
+        setEditing({ morning: false, evening: false });
+      } else {
+        setMorning({ q1: '', q2: '' });
+        setEvening({ q1: '', q2: '' });
+        setEditing({ morning: true, evening: true });
       }
     });
 
     return unsubscribe;
-  }, [user, todayDate]);
+  }, [user, dateKey]);
 
   const handleSave = async (type: 'morning' | 'evening') => {
     if (!user) return;
     
     try {
-      await setDoc(doc(db, `users/${user.uid}/journal/${todayDate}`), {
+      await setDoc(doc(db, `users/${user.uid}/journal/${dateKey}`), {
         [type]: type === 'morning' ? morning : evening,
-        date: todayDate,
+        date: dateKey,
       }, { merge: true });
       
-      logAppEvent('journal_saved', { type });
+      logAppEvent('journal_saved', { type, date: dateKey });
       setEditing(prev => ({ ...prev, [type]: false }));
+      
+      if (!history.includes(dateKey)) {
+        setHistory(prev => [dateKey, ...prev].sort().reverse());
+      }
     } catch (error) {
       console.error('Journal save error:', error);
     }
   };
 
+  const navigateDate = (days: number) => {
+    setSelectedDate(prev => addDays(prev, days));
+  };
+
   return (
     <div className="space-y-8 max-w-2xl mx-auto pb-12">
-      <header className="flex items-center justify-between bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600">
-            <Calendar size={24} />
+      <header className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600">
+              <Calendar size={24} />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">{t('nav.journal')}</h1>
+              <p className="text-sm text-gray-500 font-medium capitalize">{dateDisplay}</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">{t('nav.journal')}</h1>
-            <p className="text-sm text-gray-500 font-medium capitalize">{todayDisplay}</p>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" onClick={() => setShowHistory(!showHistory)} className={cn(showHistory && "bg-indigo-50 text-indigo-600")}>
+              <History size={20} />
+            </Button>
+            <div className="flex bg-gray-50 rounded-xl p-1">
+              <button onClick={() => navigateDate(-1)} className="p-2 hover:bg-white rounded-lg transition-all text-gray-500">
+                <ChevronLeft size={20} />
+              </button>
+              <button 
+                onClick={() => setSelectedDate(new Date())} 
+                disabled={isToday}
+                className="px-3 text-xs font-bold text-gray-400 hover:text-indigo-600 disabled:opacity-0 transition-all"
+              >
+                {t('journal.today') || 'Today'}
+              </button>
+              <button 
+                onClick={() => navigateDate(1)} 
+                disabled={isToday}
+                className="p-2 hover:bg-white rounded-lg transition-all text-gray-500 disabled:opacity-30"
+              >
+                <ChevronRight size={20} />
+              </button>
+            </div>
           </div>
         </div>
+
+        {showHistory && history.length > 0 && (
+          <motion.div 
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            className="flex flex-wrap gap-2 pt-4 border-t border-gray-50"
+          >
+            {history.map(date => (
+              <button
+                key={date}
+                onClick={() => {
+                  setSelectedDate(parseISO(date));
+                  setShowHistory(false);
+                }}
+                className={cn(
+                  "px-3 py-1.5 rounded-xl text-xs font-medium transition-all",
+                  dateKey === date 
+                    ? "bg-indigo-600 text-white" 
+                    : "bg-gray-50 text-gray-600 hover:bg-gray-100"
+                )}
+              >
+                {format(parseISO(date), 'd MMM', { locale: dateLocale })}
+              </button>
+            ))}
+          </motion.div>
+        )}
       </header>
 
       <section className="space-y-4">

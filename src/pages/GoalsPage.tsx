@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Target, Plus, CheckCircle2, Circle, Trash2, Sparkles, Loader2 } from 'lucide-react';
+import { Target, Plus, CheckCircle2, Circle, Trash2, Sparkles, Loader2, ShieldCheck, Clock, RefreshCw, DollarSign } from 'lucide-react';
 import { collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
@@ -9,6 +9,8 @@ import { Button } from '../components/Button';
 import { generateGoalReport } from '../lib/gemini';
 import { cn } from '../lib/utils';
 import { logAppEvent } from '../lib/events';
+import { format, addDays, addWeeks, addMonths, parseISO } from 'date-fns';
+import { ru, enUS } from 'date-fns/locale';
 
 interface Task {
   id: string;
@@ -22,6 +24,10 @@ interface Goal {
   deadline: string;
   tasks: Task[];
   completed: boolean;
+  isPromise?: boolean;
+  deposit?: number;
+  frequency?: 'daily' | '3days' | 'weekly';
+  duration?: '1week' | '2weeks' | '1month';
 }
 
 export const GoalsPage: React.FC = () => {
@@ -29,9 +35,19 @@ export const GoalsPage: React.FC = () => {
   const { t, language } = useLanguage();
   const [goals, setGoals] = useState<Goal[]>([]);
   const [showAdd, setShowAdd] = useState(false);
-  const [newGoal, setNewGoal] = useState({ title: '', deadline: '', tasks: [''] });
+  const [newGoal, setNewGoal] = useState({ 
+    title: '', 
+    deadline: '', 
+    tasks: [''],
+    isPromise: false,
+    duration: '1week' as '1week' | '2weeks' | '1month',
+    frequency: 'daily' as 'daily' | '3days' | 'weekly',
+    deposit: 10
+  });
   const [report, setReport] = useState<string | null>(null);
   const [loadingReport, setLoadingReport] = useState(false);
+
+  const dateLocale = language === 'ru' ? ru : enUS;
 
   useEffect(() => {
     if (!user) return;
@@ -55,17 +71,37 @@ export const GoalsPage: React.FC = () => {
   const handleAddGoal = async () => {
     if (!newGoal.title || !user) return;
     
+    let deadline = newGoal.deadline;
+    if (newGoal.isPromise) {
+      const now = new Date();
+      if (newGoal.duration === '1week') deadline = format(addWeeks(now, 1), 'yyyy-MM-dd');
+      if (newGoal.duration === '2weeks') deadline = format(addWeeks(now, 2), 'yyyy-MM-dd');
+      if (newGoal.duration === '1month') deadline = format(addMonths(now, 1), 'yyyy-MM-dd');
+    }
+
     try {
       await addDoc(collection(db, `users/${user.uid}/goals`), {
         title: newGoal.title,
-        deadline: newGoal.deadline,
+        deadline,
         tasks: newGoal.tasks.filter(t => t.trim()).map(t => ({ id: Math.random().toString(), text: t, completed: false })),
         completed: false,
+        isPromise: newGoal.isPromise,
+        deposit: newGoal.isPromise ? newGoal.deposit : 0,
+        frequency: newGoal.isPromise ? newGoal.frequency : null,
+        duration: newGoal.isPromise ? newGoal.duration : null,
         createdAt: serverTimestamp(),
       });
       
-      logAppEvent('goal_created', { title: newGoal.title });
-      setNewGoal({ title: '', deadline: '', tasks: [''] });
+      logAppEvent(newGoal.isPromise ? 'promise_created' : 'goal_created', { title: newGoal.title });
+      setNewGoal({ 
+        title: '', 
+        deadline: '', 
+        tasks: [''], 
+        isPromise: false, 
+        duration: '1week', 
+        frequency: 'daily', 
+        deposit: 10 
+      });
       setShowAdd(false);
     } catch (error) {
       console.error('Add goal error:', error);
@@ -164,14 +200,29 @@ export const GoalsPage: React.FC = () => {
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="space-y-1">
-                  <h3 className={cn("font-bold text-lg", goal.completed && "line-through text-gray-400")}>
-                    {goal.title}
-                  </h3>
-                  {goal.deadline && (
-                    <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">
-                      Deadline: {goal.deadline}
-                    </p>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {goal.isPromise && <ShieldCheck size={16} className="text-amber-500" />}
+                    <h3 className={cn("font-bold text-lg", goal.completed && "line-through text-gray-400")}>
+                      {goal.title}
+                    </h3>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {goal.deadline && (
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider bg-gray-50 px-2 py-0.5 rounded-md">
+                        Deadline: {format(parseISO(goal.deadline), 'd MMM yyyy', { locale: dateLocale })}
+                      </p>
+                    )}
+                    {goal.isPromise && (
+                      <>
+                        <p className="text-[10px] font-bold text-amber-600 uppercase tracking-wider bg-amber-50 px-2 py-0.5 rounded-md flex items-center gap-1">
+                          <DollarSign size={10} /> Deposit: ${goal.deposit}
+                        </p>
+                        <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider bg-indigo-50 px-2 py-0.5 rounded-md flex items-center gap-1">
+                          <RefreshCw size={10} /> {goal.frequency}
+                        </p>
+                      </>
+                    )}
+                  </div>
                 </div>
                 <Button variant="ghost" size="icon" onClick={() => deleteGoal(goal.id)} className="opacity-0 group-hover:opacity-100 transition-opacity">
                   <Trash2 size={18} className="text-red-400" />
@@ -237,13 +288,28 @@ export const GoalsPage: React.FC = () => {
       </div>
 
       {showAdd && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[120] flex items-center justify-center p-4 overflow-y-auto">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-white w-full max-w-md rounded-3xl shadow-xl p-6 space-y-6"
+            className="bg-white w-full max-w-md rounded-3xl shadow-xl p-6 space-y-6 my-8"
           >
-            <h2 className="text-xl font-bold text-gray-900">{t('goals.add')}</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold text-gray-900">{t('goals.add')}</h2>
+              <button
+                onClick={() => setNewGoal(prev => ({ ...prev, isPromise: !prev.isPromise }))}
+                className={cn(
+                  "flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all",
+                  newGoal.isPromise 
+                    ? "bg-amber-100 text-amber-700 ring-2 ring-amber-500" 
+                    : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                )}
+              >
+                <ShieldCheck size={14} />
+                {newGoal.isPromise ? "Promise Mode ON" : "Make a Promise"}
+              </button>
+            </div>
+
             <div className="space-y-4">
               <div className="space-y-1">
                 <label className="text-sm font-medium text-gray-700">{t('goals.title')}</label>
@@ -252,17 +318,63 @@ export const GoalsPage: React.FC = () => {
                   value={newGoal.title}
                   onChange={(e) => setNewGoal(prev => ({ ...prev, title: e.target.value }))}
                   className="w-full bg-gray-50 border-none rounded-xl px-4 py-2 focus:ring-2 focus:ring-indigo-500"
+                  placeholder={newGoal.isPromise ? "I promise to..." : "Goal title"}
                 />
               </div>
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700">{t('goals.deadline')}</label>
-                <input
-                  type="date"
-                  value={newGoal.deadline}
-                  onChange={(e) => setNewGoal(prev => ({ ...prev, deadline: e.target.value }))}
-                  className="w-full bg-gray-50 border-none rounded-xl px-4 py-2 focus:ring-2 focus:ring-indigo-500"
-                />
-              </div>
+
+              {newGoal.isPromise ? (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-gray-500 uppercase">Duration</label>
+                    <select
+                      value={newGoal.duration}
+                      onChange={(e) => setNewGoal(prev => ({ ...prev, duration: e.target.value as any }))}
+                      className="w-full bg-gray-50 border-none rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500"
+                    >
+                      <option value="1week">1 Week</option>
+                      <option value="2weeks">2 Weeks</option>
+                      <option value="1month">1 Month</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-gray-500 uppercase">Frequency</label>
+                    <select
+                      value={newGoal.frequency}
+                      onChange={(e) => setNewGoal(prev => ({ ...prev, frequency: e.target.value as any }))}
+                      className="w-full bg-gray-50 border-none rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500"
+                    >
+                      <option value="daily">Daily Report</option>
+                      <option value="3days">Every 3 Days</option>
+                      <option value="weekly">Weekly Report</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1 col-span-2">
+                    <label className="text-xs font-bold text-gray-500 uppercase">Deposit Amount ($)</label>
+                    <div className="flex items-center gap-4">
+                      <input
+                        type="range"
+                        min="5"
+                        max="100"
+                        step="5"
+                        value={newGoal.deposit}
+                        onChange={(e) => setNewGoal(prev => ({ ...prev, deposit: parseInt(e.target.value) }))}
+                        className="flex-1 accent-amber-500"
+                      />
+                      <span className="font-bold text-amber-600 w-12">${newGoal.deposit}</span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-gray-700">{t('goals.deadline')}</label>
+                  <input
+                    type="date"
+                    value={newGoal.deadline}
+                    onChange={(e) => setNewGoal(prev => ({ ...prev, deadline: e.target.value }))}
+                    className="w-full bg-gray-50 border-none rounded-xl px-4 py-2 focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+              )}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700">{t('goals.tasks')}</label>
                 {newGoal.tasks.map((task, i) => (

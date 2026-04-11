@@ -1,16 +1,18 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { MessageCircle, BookOpen, Target, User, LogOut, Languages } from 'lucide-react';
+import { MessageCircle, BookOpen, Target, User, LogOut, Languages, Heart } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { cn } from '../lib/utils';
 import { logAppEvent } from '../lib/events';
 import { Button } from './Button';
+import { SupportModal } from './SupportModal';
 
 export const Navbar: React.FC = () => {
   const { user, logout } = useAuth();
   const { t, language, setLanguage } = useLanguage();
   const location = useLocation();
+  const [isSupportOpen, setIsSupportOpen] = React.useState(false);
 
   const navItems = [
     { path: '/chat', icon: MessageCircle, label: t('nav.chat') },
@@ -44,9 +46,32 @@ export const Navbar: React.FC = () => {
               <span className="text-[10px] font-medium md:text-sm">{item.label}</span>
             </Link>
           ))}
+          <button
+            onClick={() => setIsSupportOpen(true)}
+            className="flex flex-col items-center gap-1 p-2 rounded-xl transition-colors text-pink-500 hover:bg-pink-50 md:hidden"
+          >
+            <Heart size={20} fill="currentColor" />
+            <span className="text-[10px] font-medium">Support</span>
+          </button>
+          <button
+            onClick={logout}
+            className="flex flex-col items-center gap-1 p-2 rounded-xl transition-colors text-gray-500 hover:bg-gray-50 md:hidden"
+          >
+            <LogOut size={20} />
+            <span className="text-[10px] font-medium">Logout</span>
+          </button>
         </div>
 
         <div className="hidden md:flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsSupportOpen(true)}
+            className="text-pink-600 hover:text-pink-700 hover:bg-pink-50 gap-2"
+          >
+            <Heart size={18} fill="currentColor" />
+            Support
+          </Button>
           <Button
             variant="ghost"
             size="icon"
@@ -67,6 +92,7 @@ export const Navbar: React.FC = () => {
           </div>
         </div>
       </div>
+      <SupportModal isOpen={isSupportOpen} onClose={() => setIsSupportOpen(false)} />
     </nav>
   );
 };

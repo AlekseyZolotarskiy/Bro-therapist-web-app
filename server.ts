@@ -8,7 +8,7 @@ const __dirname = path.dirname(__filename);
 
 async function startServer() {
   const app = express();
-  const PORT = process.env.PORT || 3000;
+  const PORT = Number(process.env.PORT) || 3000;
   const isProd = process.env.NODE_ENV === "production" || process.env.VITE_USER_NODE_ENV === "production";
 
   console.log(`Starting server in ${isProd ? 'production' : 'development'} mode`);
