@@ -44,7 +44,7 @@ async function startServer() {
     try {
       const { history, systemInstruction } = req.body;
       const model = genAI.getGenerativeModel({ 
-        model: "gemini-2.0-flash"
+        model: "gemini-1.5-flash"
       });
       const result = await model.generateContent({ 
         contents: history,
@@ -62,7 +62,7 @@ async function startServer() {
     try {
       const { prompt, systemInstruction } = req.body;
       const model = genAI.getGenerativeModel({ 
-        model: "gemini-2.0-flash"
+        model: "gemini-1.5-flash"
       });
       const result = await model.generateContent({
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
