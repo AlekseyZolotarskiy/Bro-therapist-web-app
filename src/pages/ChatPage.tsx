@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { generateCBTResponse } from '../lib/gemini';
 import { logAppEvent } from '../lib/events';
+import { analytics } from '../lib/analytics';
 import { Button } from '../components/Button';
 import { cn } from '../lib/utils';
 
@@ -68,6 +69,9 @@ export const ChatPage: React.FC = () => {
         text: userText,
         createdAt: serverTimestamp(),
       });
+
+      // Track analytics
+      analytics.trackChatMessage(messages.length + 1);
 
       // 2. Generate AI response
       const history = messages.concat({ 

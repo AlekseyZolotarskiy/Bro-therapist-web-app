@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { cn } from '../lib/utils';
 import { logAppEvent } from '../lib/events';
+import { analytics } from '../lib/analytics';
 import { Button } from './Button';
 import { SupportModal } from './SupportModal';
 
@@ -47,7 +48,10 @@ export const Navbar: React.FC = () => {
             </Link>
           ))}
           <button
-            onClick={() => setIsSupportOpen(true)}
+            onClick={() => {
+              setIsSupportOpen(true);
+              analytics.trackSupportClick();
+            }}
             className="flex flex-col items-center gap-1 p-2 rounded-xl transition-colors text-pink-500 hover:bg-pink-50 md:hidden"
           >
             <Heart size={20} fill="currentColor" />
@@ -66,7 +70,10 @@ export const Navbar: React.FC = () => {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setIsSupportOpen(true)}
+            onClick={() => {
+              setIsSupportOpen(true);
+              analytics.trackSupportClick();
+            }}
             className="text-pink-600 hover:text-pink-700 hover:bg-pink-50 gap-2"
           >
             <Heart size={18} fill="currentColor" />

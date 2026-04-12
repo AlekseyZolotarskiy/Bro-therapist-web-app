@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { Button } from '../components/Button';
 import { generateGoalReport } from '../lib/gemini';
+import { analytics } from '../lib/analytics';
 import { cn } from '../lib/utils';
 import { logAppEvent } from '../lib/events';
 import { format, addDays, addWeeks, addMonths, parseISO } from 'date-fns';
@@ -93,6 +94,13 @@ export const GoalsPage: React.FC = () => {
       });
       
       logAppEvent(newGoal.isPromise ? 'promise_created' : 'goal_created', { title: newGoal.title });
+      
+      if (newGoal.isPromise) {
+        analytics.trackPromiseClick(newGoal.title);
+      } else {
+        analytics.trackGoalCreated(newGoal.title);
+      }
+
       setNewGoal({ 
         title: '', 
         deadline: '', 

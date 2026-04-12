@@ -6,8 +6,8 @@ import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-
-interface SupportModalProps {
+import { analytics } from '../lib/analytics';
+import { cn } from '../lib/utils';
   isOpen: boolean;
   onClose: () => void;
 }
@@ -35,6 +35,7 @@ export const SupportModal: React.FC<SupportModalProps> = ({ isOpen, onClose }) =
         ...formData,
         createdAt: serverTimestamp(),
       });
+      analytics.trackFormSubmit('support_request');
       setSuccess(true);
       setTimeout(() => {
         onClose();

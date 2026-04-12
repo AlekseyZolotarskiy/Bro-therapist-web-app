@@ -90,25 +90,17 @@ async function startServer() {
     console.log(`Resolved dist path: ${distPath}`);
     if (!fs.existsSync(distPath)) {
       console.error(`CRITICAL: dist directory NOT FOUND at ${distPath}`);
-      // List files in current directory to help debug
-      try {
-        const files = fs.readdirSync(process.cwd());
-        console.log(`Files in CWD: ${files.join(', ')}`);
-      } catch (e) {
-        console.error("Failed to read CWD", e);
-      }
     }
 
     app.use(express.static(distPath));
     
     app.get('*', (req, res) => {
       const indexPath = path.join(distPath, 'index.html');
-      console.log(`Request for ${req.url}, serving ${indexPath}`);
       if (fs.existsSync(indexPath)) {
         res.sendFile(indexPath);
       } else {
         console.error(`404: index.html not found at ${indexPath}`);
-        res.status(404).send(`Application files not found. Path: ${indexPath}`);
+        res.status(404).send("Application files not found. Please check build logs.");
       }
     });
   }

@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { Button } from '../components/Button';
 import { logAppEvent } from '../lib/events';
+import { analytics } from '../lib/analytics';
 import { format, subDays, addDays, parseISO } from 'date-fns';
 import { ru, enUS } from 'date-fns/locale';
 import { cn } from '../lib/utils';
@@ -67,6 +68,7 @@ export const JournalPage: React.FC = () => {
       }, { merge: true });
       
       logAppEvent('journal_saved', { type, date: dateKey });
+      analytics.trackJournalEntry(type);
       setEditing(prev => ({ ...prev, [type]: false }));
       
       if (!history.includes(dateKey)) {
