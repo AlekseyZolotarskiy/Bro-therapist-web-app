@@ -8,6 +8,8 @@ import { db } from '../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { analytics } from '../lib/analytics';
 import { cn } from '../lib/utils';
+
+interface SupportModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
@@ -154,5 +156,3 @@ export const SupportModal: React.FC<SupportModalProps> = ({ isOpen, onClose }) =
     </AnimatePresence>
   );
 };
-
-import { cn } from '../lib/utils';
