@@ -3,7 +3,10 @@ import { createServer as createViteServer } from "vite";
 import path from "path";
 import { fileURLToPath } from "url";
 import fs from "fs";
-import { GoogleGenAI } from "@google/genai";
+import * as GenerativeAI from "@google/generative-ai";
+
+// Handle potential ESM/CJS interop issues
+const GoogleGenerativeAI = (GenerativeAI as any).GoogleGenerativeAI || (GenerativeAI as any).default?.GoogleGenerativeAI || GenerativeAI.GoogleGenerativeAI;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -15,11 +18,29 @@ async function startServer() {
   app.use(express.json());
 
   // Initialize Gemini on server
-  const genAI: any = process.env.GEMINI_API_KEY ? new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY }) : null;
+  const apiKey = process.env.GEMINI_API_KEY;
+  const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
+
+  if (genAI) {
+    console.log("Gemini SDK initialized successfully");
+    // Basic check for the method
+    if (typeof genAI.getGenerativeModel !== 'function') {
+      console.error("CRITICAL: genAI.getGenerativeModel is NOT a function! Check SDK version.");
+    }
+  } else {
+    console.warn("Gemini API key is missing - AI features will be disabled");
+  }
 
   // API Proxy for Gemini
   app.post("/api/chat", async (req, res) => {
     if (!genAI) return res.status(500).json({ error: "Gemini API key not configured on server" });
+    
+    console.log("Chat request received. genAI type:", typeof genAI);
+    if (genAI && typeof genAI.getGenerativeModel !== 'function') {
+      console.error("genAI keys:", Object.keys(genAI));
+      return res.status(500).json({ error: "Gemini SDK error: getGenerativeModel is not a function. Please check server logs." });
+    }
+
     try {
       const { history, systemInstruction } = req.body;
       const model = genAI.getGenerativeModel({ 

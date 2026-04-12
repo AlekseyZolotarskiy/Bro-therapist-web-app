@@ -10,15 +10,15 @@ export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 
 // Initialize Analytics lazily (only if supported and ID exists)
 export const analyticsPromise = (async () => {
+  if (typeof window === 'undefined') return null;
   try {
-    const yes = await isSupported();
+    const yes = await isSupported().catch(() => false);
     if (yes && firebaseConfig.measurementId) {
       console.log("Analytics: Initializing with ID", firebaseConfig.measurementId);
       return getAnalytics(app);
     }
-    console.log("Analytics: Not supported or no ID found");
   } catch (e) {
-    console.error("Analytics: Initialization failed", e);
+    console.warn("Analytics: Initialization skipped", e);
   }
   return null;
 })();
