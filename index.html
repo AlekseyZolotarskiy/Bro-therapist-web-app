@@ -6,24 +6,42 @@
     <title>My Google AI Studio App</title>
   </head>
   <body>
-    <div id="root"></div>
     <script>
-      window.onerror = function(msg, url, lineNo, columnNo, error) {
-        var div = document.createElement('div');
-        div.style.position = 'fixed';
-        div.style.top = '0';
-        div.style.left = '0';
-        div.style.width = '100%';
-        div.style.background = 'red';
-        div.style.color = 'white';
-        div.style.padding = '20px';
-        div.style.zIndex = '9999';
-        div.style.fontSize = '14px';
-        div.innerHTML = '<strong>Client Error:</strong> ' + msg + '<br>at ' + url + ':' + lineNo + ':' + columnNo;
-        document.body.appendChild(div);
-        return false;
-      };
+      (function() {
+        var errorBanner = document.createElement('div');
+        errorBanner.id = 'debug-error-banner';
+        errorBanner.style.display = 'none';
+        errorBanner.style.position = 'fixed';
+        errorBanner.style.top = '0';
+        errorBanner.style.left = '0';
+        errorBanner.style.width = '100%';
+        errorBanner.style.background = '#fee2e2';
+        errorBanner.style.color = '#991b1b';
+        errorBanner.style.padding = '1rem';
+        errorBanner.style.zIndex = '99999';
+        errorBanner.style.borderBottom = '2px solid #ef4444';
+        errorBanner.style.fontFamily = 'monospace';
+        errorBanner.style.fontSize = '12px';
+        errorBanner.style.whiteSpace = 'pre-wrap';
+        errorBanner.style.boxShadow = '0 4px 6px -1px rgb(0 0 0 / 0.1)';
+        document.documentElement.appendChild(errorBanner);
+
+        function showError(msg) {
+          errorBanner.style.display = 'block';
+          errorBanner.innerHTML = '<strong>[Frontend Error]</strong>\n' + msg;
+        }
+
+        window.onerror = function(msg, url, line, col, error) {
+          showError(msg + '\nAt: ' + url + ':' + line + ':' + col);
+          return false;
+        };
+
+        window.onunhandledrejection = function(event) {
+          showError('Unhandled Promise Rejection: ' + event.reason);
+        };
+      })();
     </script>
+    <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
