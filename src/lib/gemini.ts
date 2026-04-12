@@ -16,19 +16,29 @@ Example Tone:
 "Привет, бро. Я тебя слышу. Это звучит непросто. Давай на секунду разберем эту мысль — как думаешь, есть ли другой взгляд на эту ситуацию?"
 `;
 
-export async function generateCBTResponse(history: { role: "user" | "model"; parts: { text: string }[] }[]) {
+export async function generateCBTResponse(
+  history: { role: "user" | "model"; parts: { text: string }[] }[],
+  systemInstruction: string = CBT_SYSTEM_INSTRUCTION
+) {
   const response = await fetch('/api/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       history,
-      systemInstruction: CBT_SYSTEM_INSTRUCTION
+      systemInstruction
     })
   });
   
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to generate response');
+    let errorMessage = 'Failed to generate response';
+    try {
+      const error = await response.json();
+      errorMessage = error.error || errorMessage;
+    } catch (e) {
+      const text = await response.text();
+      errorMessage = text || errorMessage;
+    }
+    throw new Error(errorMessage);
   }
   
   const data = await response.json();
@@ -50,8 +60,15 @@ export async function generateGoalReport(goals: any[], language: "ru" | "en") {
   });
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to generate report');
+    let errorMessage = 'Failed to generate report';
+    try {
+      const error = await response.json();
+      errorMessage = error.error || errorMessage;
+    } catch (e) {
+      const text = await response.text();
+      errorMessage = text || errorMessage;
+    }
+    throw new Error(errorMessage);
   }
 
   const data = await response.json();

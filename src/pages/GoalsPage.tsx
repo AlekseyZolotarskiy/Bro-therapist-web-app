@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Target, Plus, CheckCircle2, Circle, Trash2, Sparkles, Loader2, ShieldCheck, Clock, RefreshCw, DollarSign } from 'lucide-react';
+import { Target, Plus, CheckCircle2, Circle, Trash2, Sparkles, Loader2, ShieldCheck, Clock, RefreshCw, DollarSign, MessageCircle } from 'lucide-react';
 import { collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
@@ -8,6 +8,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { Button } from '../components/Button';
 import { generateGoalReport } from '../lib/gemini';
 import { analytics } from '../lib/analytics';
+import { GoalChatModal } from '../components/GoalChatModal';
 import { cn } from '../lib/utils';
 import { logAppEvent } from '../lib/events';
 import { format, addDays, addWeeks, addMonths, parseISO } from 'date-fns';
@@ -47,6 +48,8 @@ export const GoalsPage: React.FC = () => {
   });
   const [report, setReport] = useState<string | null>(null);
   const [loadingReport, setLoadingReport] = useState(false);
+  const [reportError, setReportError] = useState<string | null>(null);
+  const [selectedGoalForChat, setSelectedGoalForChat] = useState<Goal | null>(null);
 
   const dateLocale = language === 'ru' ? ru : enUS;
 
@@ -149,11 +152,13 @@ export const GoalsPage: React.FC = () => {
   const handleGenerateReport = async () => {
     if (goals.length === 0) return;
     setLoadingReport(true);
+    setReportError(null);
     try {
       const res = await generateGoalReport(goals, language);
       setReport(res || '...');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Report error:', error);
+      setReportError(error.message || 'Failed to generate report');
     } finally {
       setLoadingReport(false);
     }
@@ -193,6 +198,12 @@ export const GoalsPage: React.FC = () => {
           <p className="text-indigo-50 leading-relaxed whitespace-pre-wrap relative z-10">{report}</p>
           <Button variant="secondary" size="sm" onClick={() => setReport(null)}>Dismiss</Button>
         </motion.div>
+      )}
+
+      {reportError && (
+        <div className="bg-red-50 text-red-600 p-4 rounded-2xl text-sm font-medium border border-red-100">
+          {reportError}
+        </div>
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -258,15 +269,15 @@ export const GoalsPage: React.FC = () => {
 
               <div className="mt-6 pt-4 border-t border-gray-50 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="h-1.5 w-24 bg-gray-100 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-indigo-500 transition-all duration-500" 
-                      style={{ width: `${(goal.tasks.filter(t => t.completed).length / goal.tasks.length) * 100}%` }}
-                    />
-                  </div>
-                  <span className="text-[10px] font-bold text-gray-400">
-                    {Math.round((goal.tasks.filter(t => t.completed).length / goal.tasks.length) * 100)}%
-                  </span>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setSelectedGoalForChat(goal)}
+                    className="text-indigo-600 hover:bg-indigo-50 text-[10px] font-bold uppercase tracking-wider h-8"
+                  >
+                    <MessageCircle size={14} className="mr-1" />
+                    {t('goals.chat_with_bro')}
+                  </Button>
                 </div>
                 {goal.completed && (
                   <span className="text-[10px] font-bold text-green-500 uppercase tracking-widest">Completed</span>
@@ -419,6 +430,13 @@ export const GoalsPage: React.FC = () => {
             </div>
           </motion.div>
         </div>
+      )}
+      {selectedGoalForChat && (
+        <GoalChatModal 
+          isOpen={!!selectedGoalForChat}
+          onClose={() => setSelectedGoalForChat(null)}
+          goal={selectedGoalForChat}
+        />
       )}
     </div>
   );

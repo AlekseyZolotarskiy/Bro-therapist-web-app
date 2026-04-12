@@ -24,6 +24,7 @@ export const ChatPage: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -58,6 +59,7 @@ export const ChatPage: React.FC = () => {
     const userText = input;
     setInput('');
     setLoading(true);
+    setError(null);
 
     try {
       if (messages.length === 0) {
@@ -92,8 +94,9 @@ export const ChatPage: React.FC = () => {
         text: responseText || '...',
         createdAt: serverTimestamp(),
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Chat error:', error);
+      setError(error.message || 'Failed to connect to Bro. Check your internet or API key.');
     } finally {
       setLoading(false);
     }
@@ -164,6 +167,16 @@ export const ChatPage: React.FC = () => {
           >
             <Loader2 size={16} className="animate-spin" />
             <span className="text-xs font-medium">Bro is thinking...</span>
+          </motion.div>
+        )}
+
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-4 bg-red-50 text-red-600 rounded-2xl text-sm font-medium border border-red-100 mx-4"
+          >
+            {error}
           </motion.div>
         )}
       </div>
