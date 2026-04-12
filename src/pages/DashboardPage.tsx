@@ -91,7 +91,12 @@ export const DashboardPage: React.FC = () => {
               ? 'Используй КПТ-чат, чтобы разобраться с тревогами, и дневник, чтобы закрепить результат.' 
               : 'Use CBT chat to deal with anxieties and a journal to consolidate the result.'}
           </p>
-          <Button variant="secondary" size="lg" className="h-14 px-8 text-indigo-600 font-bold rounded-2xl">
+          <Button 
+            variant="secondary" 
+            size="lg" 
+            className="h-14 px-8 text-indigo-600 font-bold rounded-2xl"
+            onClick={() => window.location.href = '/chat'}
+          >
             {language === 'ru' ? 'Начать сессию' : 'Start Session'}
           </Button>
         </div>

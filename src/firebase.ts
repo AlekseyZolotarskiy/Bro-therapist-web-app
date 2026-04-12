@@ -9,9 +9,14 @@ export const auth = getAuth(app);
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
 
 // Initialize Analytics lazily (only if supported and ID exists)
-export const analyticsPromise = isSupported().then(yes => 
-  yes && firebaseConfig.measurementId ? getAnalytics(app) : null
-);
+export const analyticsPromise = isSupported().then(yes => {
+  if (yes && firebaseConfig.measurementId) {
+    console.log("Analytics initialized with ID:", firebaseConfig.measurementId);
+    return getAnalytics(app);
+  }
+  console.warn("Analytics not initialized: supported =", yes, "ID =", firebaseConfig.measurementId);
+  return null;
+});
 
 // Test connection
 async function testConnection() {
