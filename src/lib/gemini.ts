@@ -1,6 +1,20 @@
 import { GoogleGenAI } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+// Lazy initialization to prevent crash on startup if key is missing
+let aiInstance: any = null;
+
+function getAI() {
+  if (!aiInstance) {
+    // In this environment, process.env.GEMINI_API_KEY is expected to be available
+    const apiKey = typeof process !== 'undefined' ? process.env.GEMINI_API_KEY : undefined;
+    
+    if (!apiKey) {
+      throw new Error("An API Key must be set when running in a browser. Please ensure the Gemini API key is configured in the settings menu.");
+    }
+    aiInstance = new GoogleGenAI({ apiKey });
+  }
+  return aiInstance;
+}
 
 export const CBT_SYSTEM_INSTRUCTION = `
 You are "Bro Therapist", a supportive, friendly, and professional CBT (Cognitive Behavioral Therapy) therapist.
@@ -25,6 +39,7 @@ export async function generateCBTResponse(
   systemInstruction: string = CBT_SYSTEM_INSTRUCTION
 ) {
   try {
+    const ai = getAI();
     // The SDK expects contents to be an array of { role, parts: [{ text }] }
     // Our history already matches this structure mostly, but let's ensure it's clean
     const response = await ai.models.generateContent({
@@ -52,6 +67,7 @@ export async function generateGoalReport(goals: any[], language: "ru" | "en") {
     : `Analyze my goals and progress: ${JSON.stringify(goals)}. Provide a short report, praise successes, and give suggestions for improvement.`;
 
   try {
+    const ai = getAI();
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: prompt,
