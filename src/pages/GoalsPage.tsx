@@ -286,24 +286,6 @@ export const GoalsPage: React.FC = () => {
             </motion.div>
           ))}
         </AnimatePresence>
-
-        {goals.length > 0 && !report && (
-          <button
-            onClick={handleGenerateReport}
-            disabled={loadingReport}
-            className="md:col-span-2 bg-indigo-50 border-2 border-dashed border-indigo-200 p-8 rounded-3xl flex flex-col items-center justify-center gap-4 text-indigo-600 hover:bg-indigo-100 transition-all group"
-          >
-            {loadingReport ? (
-              <Loader2 className="animate-spin" size={32} />
-            ) : (
-              <Sparkles size={32} className="group-hover:scale-110 transition-transform" />
-            )}
-            <div className="text-center">
-              <p className="font-bold">{t('goals.report')}</p>
-              <p className="text-sm opacity-70">Let Bro analyze your progress and give you some tips</p>
-            </div>
-          </button>
-        )}
       </div>
 
       {showAdd && (

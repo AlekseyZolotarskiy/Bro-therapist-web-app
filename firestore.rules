@@ -33,6 +33,10 @@ service cloud.firestore {
       
       match /goals/{goalId} {
         allow read, write: if isOwner(userId);
+        
+        match /{allSubcollections=**} {
+          allow read, write: if isOwner(userId);
+        }
       }
       
       match /events/{eventId} {

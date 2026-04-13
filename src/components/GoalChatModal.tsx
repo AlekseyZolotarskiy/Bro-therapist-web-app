@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Send, X, Bot, User, Loader2 } from 'lucide-react';
-import { collection, addDoc, query, orderBy, onSnapshot, limit, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, query, orderBy, onSnapshot, limit, serverTimestamp, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -50,6 +50,9 @@ export const GoalChatModal: React.FC<GoalChatModalProps> = ({ isOpen, onClose, g
         ...doc.data()
       })) as Message[];
       setMessages(msgs);
+    }, (err) => {
+      console.error("Snapshot error:", err);
+      setError("Permission denied or connection error. Please check your account.");
     });
 
     return unsubscribe;
@@ -70,16 +73,33 @@ export const GoalChatModal: React.FC<GoalChatModalProps> = ({ isOpen, onClose, g
     setError(null);
 
     try {
-      // 1. Save user message
+      // 1. Fetch some context from the main chat to "know who the user is"
+      const mainChatQuery = query(
+        collection(db, `users/${user.uid}/chats/main/messages`),
+        orderBy('createdAt', 'desc'),
+        limit(10)
+      );
+      const mainChatSnapshot = await getDocs(mainChatQuery);
+      const mainChatContext = mainChatSnapshot.docs
+        .reverse()
+        .map(doc => `${doc.data().role === 'user' ? 'User' : 'Bro'}: ${doc.data().text}`)
+        .join('\n');
+
+      // 2. Save user message
       await addDoc(collection(db, `users/${user.uid}/goals/${goal.id}/messages`), {
         role: 'user',
         text: userText,
         createdAt: serverTimestamp(),
       });
 
-      // 2. Build history with context
+      // 3. Build history with context
       const systemInstruction = `You are Bro Therapist. You are helping the user with a specific goal: "${goal.title}". 
-      Focus your advice and support on this specific goal. Be encouraging and use CBT principles.`;
+      Focus your advice and support on this specific goal. 
+      
+      Context from your general conversations with this user:
+      ${mainChatContext || "No previous general conversation history."}
+      
+      User is now telling you about their progress on this specific goal. Be encouraging, use CBT principles, and remember your "bro" personality.`;
 
       const history = messages.concat({ 
         id: 'temp', 
@@ -93,7 +113,7 @@ export const GoalChatModal: React.FC<GoalChatModalProps> = ({ isOpen, onClose, g
 
       const responseText = await generateCBTResponse(history, systemInstruction);
       
-      // 3. Save AI response
+      // 4. Save AI response
       await addDoc(collection(db, `users/${user.uid}/goals/${goal.id}/messages`), {
         role: 'model',
         text: responseText || '...',

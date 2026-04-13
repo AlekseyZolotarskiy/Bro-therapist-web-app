@@ -54,7 +54,7 @@ const AppRoutes = () => {
           page_location: window.location.href
         });
       }
-    });
+    }).catch(e => console.warn("Analytics failed", e));
   }, [location]);
 
   // Global deadline check
