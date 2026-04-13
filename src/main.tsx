@@ -1,13 +1,19 @@
-import {StrictMode, Component, ErrorInfo, ReactNode} from 'react';
+import React, {StrictMode, Component, ErrorInfo, ReactNode} from 'react';
 import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 
-class ErrorBoundary extends Component<{children: ReactNode}, {hasError: boolean, error: Error | null}> {
-  constructor(props: {children: ReactNode}) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
+interface ErrorBoundaryProps {
+  children: ReactNode;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+}
+
+class ErrorBoundary extends React.Component<any, any> {
+  state = { hasError: false, error: null as Error | null };
 
   static getDerivedStateFromError(error: Error) {
     return { hasError: true, error };
@@ -33,7 +39,7 @@ class ErrorBoundary extends Component<{children: ReactNode}, {hasError: boolean,
       );
     }
 
-    return this.props.children;
+    return (this as any).props.children;
   }
 }
 

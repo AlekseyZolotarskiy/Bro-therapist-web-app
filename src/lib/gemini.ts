@@ -1,3 +1,7 @@
+import { GoogleGenAI } from "@google/genai";
+
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
 export const CBT_SYSTEM_INSTRUCTION = `
 You are "Bro Therapist", a supportive, friendly, and professional CBT (Cognitive Behavioral Therapy) therapist.
 Your tone is "bro-like" but deeply empathetic and professional—think of a wise, supportive older brother who is also a trained therapist.
@@ -20,29 +24,26 @@ export async function generateCBTResponse(
   history: { role: "user" | "model"; parts: { text: string }[] }[],
   systemInstruction: string = CBT_SYSTEM_INSTRUCTION
 ) {
-  const response = await fetch('/api/chat', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      history,
-      systemInstruction
-    })
-  });
-  
-  if (!response.ok) {
-    let errorMessage = 'Failed to generate response';
-    try {
-      const error = await response.json();
-      errorMessage = error.error || errorMessage;
-    } catch (e) {
-      const text = await response.text();
-      errorMessage = text || errorMessage;
+  try {
+    // The SDK expects contents to be an array of { role, parts: [{ text }] }
+    // Our history already matches this structure mostly, but let's ensure it's clean
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: history as any,
+      config: {
+        systemInstruction
+      }
+    });
+
+    if (!response.text) {
+      throw new Error("Bro is speechless. Try again?");
     }
-    throw new Error(errorMessage);
+
+    return response.text;
+  } catch (error: any) {
+    console.error("Gemini Frontend Error:", error);
+    throw new Error(error.message || "Failed to connect to Bro.");
   }
-  
-  const data = await response.json();
-  return data.text;
 }
 
 export async function generateGoalReport(goals: any[], language: "ru" | "en") {
@@ -50,27 +51,22 @@ export async function generateGoalReport(goals: any[], language: "ru" | "en") {
     ? `Проанализируй мои цели и прогресс: ${JSON.stringify(goals)}. Дай краткий отчет, похвали за успехи и дай советы по улучшению.`
     : `Analyze my goals and progress: ${JSON.stringify(goals)}. Provide a short report, praise successes, and give suggestions for improvement.`;
 
-  const response = await fetch('/api/goals/report', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      prompt,
-      systemInstruction: "You are an AI productivity coach and therapist. Be encouraging and analytical."
-    })
-  });
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: prompt,
+      config: {
+        systemInstruction: "You are an AI productivity coach and therapist. Be encouraging and analytical."
+      }
+    });
 
-  if (!response.ok) {
-    let errorMessage = 'Failed to generate report';
-    try {
-      const error = await response.json();
-      errorMessage = error.error || errorMessage;
-    } catch (e) {
-      const text = await response.text();
-      errorMessage = text || errorMessage;
+    if (!response.text) {
+      throw new Error("Couldn't generate the report, bro.");
     }
-    throw new Error(errorMessage);
-  }
 
-  const data = await response.json();
-  return data.text;
+    return response.text;
+  } catch (error: any) {
+    console.error("Gemini Report Error:", error);
+    throw new Error(error.message || "Failed to generate report.");
+  }
 }
