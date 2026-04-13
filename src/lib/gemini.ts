@@ -5,8 +5,9 @@ let aiInstance: any = null;
 
 function getAI() {
   if (!aiInstance) {
-    // In this environment, process.env.GEMINI_API_KEY is expected to be available
-    const apiKey = typeof process !== 'undefined' ? process.env.GEMINI_API_KEY : undefined;
+    // Vite's 'define' replaces 'process.env.GEMINI_API_KEY' at build time.
+    // We use a direct reference so Vite can perform the replacement.
+    const apiKey = process.env.GEMINI_API_KEY;
     
     if (!apiKey) {
       throw new Error("An API Key must be set when running in a browser. Please ensure the Gemini API key is configured in the settings menu.");
