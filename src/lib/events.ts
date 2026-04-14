@@ -11,7 +11,7 @@ export type AppEvent =
   | 'chat_milestone'
   | 'language_switched';
 
-export async function logAppEvent(event: AppEvent, metadata: any = {}) {
+export async function logAppEvent(event: AppEvent, metadata: any = {}, isKey: boolean = false) {
   const user = auth.currentUser;
   if (!user) return;
 
@@ -19,6 +19,7 @@ export async function logAppEvent(event: AppEvent, metadata: any = {}) {
     await addDoc(collection(db, `users/${user.uid}/events`), {
       event,
       metadata,
+      isKey,
       timestamp: serverTimestamp(),
       path: window.location.pathname,
     });

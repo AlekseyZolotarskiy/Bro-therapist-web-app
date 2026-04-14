@@ -42,7 +42,6 @@ export const GoalsPage: React.FC = () => {
     deadline: '', 
     tasks: [''],
     isPromise: false,
-    duration: '1week' as '1week' | '2weeks' | '1month',
     frequency: 'daily' as 'daily' | '3days' | 'weekly',
     deposit: 10
   });
@@ -105,7 +104,6 @@ export const GoalsPage: React.FC = () => {
         deadline: '', 
         tasks: [''], 
         isPromise: false, 
-        duration: '1week', 
         frequency: 'daily', 
         deposit: 10 
       });

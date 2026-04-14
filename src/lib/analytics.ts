@@ -13,7 +13,7 @@ export const analytics = {
   // Auth
   trackLogin: () => {
     trackEvent('login');
-    logAppEvent('login');
+    logAppEvent('login', {}, true);
   },
 
   // Чат
@@ -21,15 +21,15 @@ export const analytics = {
     trackEvent('chat_message_sent', { count });
     if (count === 1) {
       trackEvent('chat_milestone_1');
-      logAppEvent('chat_milestone', { count: 1 });
+      logAppEvent('chat_milestone', { count: 1 }, true);
     }
     if (count === 5) {
       trackEvent('chat_milestone_5');
-      logAppEvent('chat_milestone', { count: 5 });
+      logAppEvent('chat_milestone', { count: 5 }, true);
     }
     if (count === 10) {
       trackEvent('chat_milestone_10');
-      logAppEvent('chat_milestone', { count: 10 });
+      logAppEvent('chat_milestone', { count: 10 }, true);
     }
   },
 
@@ -47,7 +47,7 @@ export const analytics = {
   trackJournalEntry: (type: 'morning' | 'evening') => {
     const eventName = `journal_entry_${type}`;
     trackEvent(eventName);
-    logAppEvent('journal_saved', { type });
+    logAppEvent('journal_saved', { type }, true);
   },
 
   // Цели
@@ -63,7 +63,7 @@ export const analytics = {
       is_promise: params.isPromise,
       duration_days: params.durationDays
     });
-    logAppEvent(params.isPromise ? 'promise_created' : 'goal_created', params);
+    logAppEvent(params.isPromise ? 'promise_created' : 'goal_created', params, true);
   },
 
   trackGoalCompleted: (params: { title: string; onTime: boolean }) => {
@@ -71,7 +71,7 @@ export const analytics = {
       goal_title: params.title,
       on_time: params.onTime
     });
-    logAppEvent('goal_completed', params);
+    logAppEvent('goal_completed', params, true);
   },
 
   trackPromiseClick: (goalTitle: string) => {
