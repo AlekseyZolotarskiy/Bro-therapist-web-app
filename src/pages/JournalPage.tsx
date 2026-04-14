@@ -67,7 +67,6 @@ export const JournalPage: React.FC = () => {
         date: dateKey,
       }, { merge: true });
       
-      logAppEvent('journal_saved', { type, date: dateKey });
       analytics.trackJournalEntry(type);
       setEditing(prev => ({ ...prev, [type]: false }));
       

@@ -8,6 +8,7 @@ import {
 } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../firebase';
+import { analytics } from '../lib/analytics';
 
 interface AuthContextType {
   user: User | null;
@@ -34,6 +35,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           photoURL: user.photoURL,
           lastLogin: serverTimestamp(),
         }, { merge: true });
+
+        // Track login
+        analytics.trackLogin();
       }
       setUser(user);
       setLoading(false);

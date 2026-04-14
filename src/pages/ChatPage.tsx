@@ -62,9 +62,6 @@ export const ChatPage: React.FC = () => {
     setError(null);
 
     try {
-      if (messages.length === 0) {
-        logAppEvent('chat_started');
-      }
       // 1. Save user message to Firestore
       await addDoc(collection(db, `users/${user.uid}/chats/main/messages`), {
         role: 'user',

@@ -2,11 +2,13 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 
 export type AppEvent = 
+  | 'login'
   | 'goal_created' 
   | 'promise_created'
   | 'goal_completed' 
   | 'journal_saved' 
   | 'chat_started' 
+  | 'chat_milestone'
   | 'language_switched';
 
 export async function logAppEvent(event: AppEvent, metadata: any = {}) {

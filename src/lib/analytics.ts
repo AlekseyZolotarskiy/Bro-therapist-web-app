@@ -1,5 +1,6 @@
 import { logEvent } from 'firebase/analytics';
 import { analyticsPromise } from '../firebase';
+import { logAppEvent } from './events';
 
 export const trackEvent = async (eventName: string, params?: Record<string, any>) => {
   const analytics = await analyticsPromise;
@@ -9,12 +10,27 @@ export const trackEvent = async (eventName: string, params?: Record<string, any>
 };
 
 export const analytics = {
+  // Auth
+  trackLogin: () => {
+    trackEvent('login');
+    logAppEvent('login');
+  },
+
   // Чат
   trackChatMessage: (count: number) => {
     trackEvent('chat_message_sent', { count });
-    if (count === 1) trackEvent('chat_milestone_1');
-    if (count === 5) trackEvent('chat_milestone_5');
-    if (count === 10) trackEvent('chat_milestone_10');
+    if (count === 1) {
+      trackEvent('chat_milestone_1');
+      logAppEvent('chat_milestone', { count: 1 });
+    }
+    if (count === 5) {
+      trackEvent('chat_milestone_5');
+      logAppEvent('chat_milestone', { count: 5 });
+    }
+    if (count === 10) {
+      trackEvent('chat_milestone_10');
+      logAppEvent('chat_milestone', { count: 10 });
+    }
   },
 
   // Поддержка
@@ -29,12 +45,33 @@ export const analytics = {
 
   // Дневник
   trackJournalEntry: (type: 'morning' | 'evening') => {
-    trackEvent(`journal_entry_${type}`);
+    const eventName = `journal_entry_${type}`;
+    trackEvent(eventName);
+    logAppEvent('journal_saved', { type });
   },
 
   // Цели
-  trackGoalCreated: (title: string) => {
-    trackEvent('goal_created', { goal_title: title });
+  trackGoalCreated: (params: { 
+    title: string; 
+    tasksCount: number; 
+    isPromise: boolean; 
+    durationDays: number;
+  }) => {
+    trackEvent('goal_created', {
+      goal_title: params.title,
+      tasks_count: params.tasksCount,
+      is_promise: params.isPromise,
+      duration_days: params.durationDays
+    });
+    logAppEvent(params.isPromise ? 'promise_created' : 'goal_created', params);
+  },
+
+  trackGoalCompleted: (params: { title: string; onTime: boolean }) => {
+    trackEvent('goal_completed', {
+      goal_title: params.title,
+      on_time: params.onTime
+    });
+    logAppEvent('goal_completed', params);
   },
 
   trackPromiseClick: (goalTitle: string) => {
