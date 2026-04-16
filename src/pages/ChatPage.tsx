@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Send, Plus, Bot, User, Loader2 } from 'lucide-react';
-import { collection, addDoc, query, orderBy, onSnapshot, limit, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { collection, addDoc, query, orderBy, onSnapshot, limit, serverTimestamp, Timestamp, doc, updateDoc, onSnapshot as onDocSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
-import { generateCBTResponse } from '../lib/gemini';
+import { generateCBTResponse, extractNameFromChat } from '../lib/gemini';
 import { logAppEvent } from '../lib/events';
 import { analytics } from '../lib/analytics';
 import { Button } from '../components/Button';
@@ -25,10 +25,18 @@ export const ChatPage: React.FC = () => {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [preferredName, setPreferredName] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!user) return;
+
+    // Listen to preferred name
+    const unsubName = onDocSnapshot(doc(db, 'users', user.uid), (snap) => {
+      if (snap.exists()) {
+        setPreferredName(snap.data().preferredName || null);
+      }
+    });
 
     const q = query(
       collection(db, `users/${user.uid}/chats/main/messages`),
@@ -44,7 +52,10 @@ export const ChatPage: React.FC = () => {
       setMessages(msgs);
     });
 
-    return unsubscribe;
+    return () => {
+      unsubName();
+      unsubscribe();
+    };
   }, [user]);
 
   useEffect(() => {
@@ -91,6 +102,17 @@ export const ChatPage: React.FC = () => {
         text: responseText || '...',
         createdAt: serverTimestamp(),
       });
+
+      // 4. Try to extract name if not set
+      if (!preferredName) {
+        const extractedName = await extractNameFromChat(history);
+        if (extractedName && extractedName.length < 50) {
+          await updateDoc(doc(db, 'users', user.uid), {
+            preferredName: extractedName
+          });
+          logAppEvent('chat_milestone', { type: 'name_extracted', name: extractedName }, true);
+        }
+      }
     } catch (error: any) {
       console.error('Chat error:', error);
       setError(error.message || 'Failed to connect to Bro. Check your internet or API key.');
