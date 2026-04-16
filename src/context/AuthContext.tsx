@@ -37,7 +37,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }, { merge: true });
 
         // Track login
+        analytics.setUserId(user.uid);
         analytics.trackLogin();
+      } else {
+        analytics.setUserId(null);
       }
       setUser(user);
       setLoading(false);

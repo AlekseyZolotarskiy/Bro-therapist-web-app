@@ -1,4 +1,4 @@
-import { logEvent } from 'firebase/analytics';
+import { logEvent, setUserId } from 'firebase/analytics';
 import { analyticsPromise } from '../firebase';
 import { logAppEvent } from './events';
 
@@ -11,6 +11,13 @@ export const trackEvent = async (eventName: string, params?: Record<string, any>
 
 export const analytics = {
   // Auth
+  setUserId: async (uid: string | null) => {
+    const instance = await analyticsPromise;
+    if (instance) {
+      setUserId(instance, uid);
+    }
+  },
+
   trackLogin: () => {
     trackEvent('login');
     logAppEvent('login', {}, true);

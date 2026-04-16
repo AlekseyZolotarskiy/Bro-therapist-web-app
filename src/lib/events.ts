@@ -17,6 +17,7 @@ export async function logAppEvent(event: AppEvent, metadata: any = {}, isKey: bo
 
   try {
     await addDoc(collection(db, `users/${user.uid}/events`), {
+      uid: user.uid,
       event,
       metadata,
       isKey,
