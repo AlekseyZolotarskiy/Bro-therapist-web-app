@@ -222,70 +222,12 @@ export const GoalsPage: React.FC = () => {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {isAdmin && (
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={() => setShowS2SSettings(true)}
-              className="text-indigo-400 hover:text-indigo-600 hover:bg-indigo-50"
-              title="S2S Settings"
-            >
-              <Shield size={20} />
-            </Button>
-          )}
           <Button onClick={() => setShowAdd(true)} className="gap-2">
             <Plus size={20} />
             <span className="hidden sm:inline">{t('goals.add')}</span>
           </Button>
         </div>
       </header>
-
-      {showS2SSettings && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[200] flex items-center justify-center p-4">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-white w-full max-w-md rounded-[2rem] p-8 shadow-2xl space-y-6"
-          >
-            <div className="flex items-center gap-3 text-indigo-600">
-              <Shield size={24} />
-              <h2 className="text-2xl font-black tracking-tight">S2S CONFIG</h2>
-            </div>
-            
-            <p className="text-sm text-gray-500 leading-relaxed font-medium">
-              This config is stored securely in Firestore and only accessible by you. 
-              It will be passed to the server for S2S tracking.
-            </p>
-
-            <div className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400">GA4 API Secret</label>
-                <input
-                  type="password"
-                  value={s2sConfig.secret}
-                  onChange={(e) => setS2SConfig(prev => ({ ...prev, secret: e.target.value }))}
-                  className="w-full bg-gray-50 border-none rounded-2xl px-5 py-3.5 font-mono text-sm focus:ring-2 focus:ring-indigo-500"
-                  placeholder="Paste your API Secret here..."
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-3 pt-4">
-              <Button variant="secondary" className="flex-1 h-12 rounded-2xl" onClick={() => setShowS2SSettings(false)}>
-                Cancel
-              </Button>
-              <Button 
-                className="flex-1 h-12 rounded-2xl gap-2" 
-                onClick={handleSaveS2S}
-                disabled={loadingS2S}
-              >
-                {loadingS2S ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
-                Save Config
-              </Button>
-            </div>
-          </motion.div>
-        </div>
-      )}
 
       {report && (
         <motion.div

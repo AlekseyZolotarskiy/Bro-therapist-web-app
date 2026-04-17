@@ -30,18 +30,6 @@ async function startServer() {
   
   app.use(express.json());
 
-  // Diagnostic endpoint to check if secrets are loaded
-  app.get("/api/debug-s2s", (req, res) => {
-    const allKeys = Object.keys(process.env);
-    res.json({
-      hasId: !!(process.env.GA4_MEASUREMENT_ID || process.env.VITE_GA4_MEASUREMENT_ID || firebaseConfig.measurementId),
-      hasSecret: !!(process.env.GA4_API_SECRET || process.env.VITE_GA4_API_SECRET),
-      envKeys: allKeys.filter(k => k.includes('GA4') || k.includes('GEMINI')),
-      projectId: firebaseConfig.projectId,
-      measurementIdSource: (process.env.GA4_MEASUREMENT_ID || process.env.VITE_GA4_MEASUREMENT_ID) ? 'env' : (firebaseConfig.measurementId ? 'config' : 'none')
-    });
-  });
-
   // GA4 Measurement Protocol (S2S) Route
   app.post("/api/track-promise", async (req, res) => {
     const { userId, amount, title, forceSecret } = req.body;
