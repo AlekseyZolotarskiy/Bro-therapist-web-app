@@ -10,6 +10,7 @@ import { logAppEvent } from '../lib/events';
 import { analytics } from '../lib/analytics';
 import { Button } from '../components/Button';
 import { cn } from '../lib/utils';
+import { BRO_AVATAR_URL } from '../constants';
 
 interface Message {
   id: string;
@@ -142,8 +143,8 @@ export const ChatPage: React.FC = () => {
     <div className="flex flex-col h-[calc(100vh-12rem)] md:h-[calc(100vh-8rem)] bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
       <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white/80 backdrop-blur-sm sticky top-0 z-10">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-indigo-100 rounded-2xl flex items-center justify-center text-indigo-600">
-            <Bot size={24} />
+          <div className="w-12 h-12 bg-indigo-100 rounded-2xl flex items-center justify-center text-indigo-600 overflow-hidden shadow-sm">
+            <img src={BRO_AVATAR_URL} alt="Bro" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
           </div>
           <div>
             <h2 className="font-bold text-gray-900 leading-tight">Bro Therapist</h2>
@@ -160,8 +161,10 @@ export const ChatPage: React.FC = () => {
         className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth"
       >
         {messages.length === 0 && (
-          <div className="h-full flex flex-col items-center justify-center text-center space-y-4 opacity-50">
-            <div className="w-16 h-16 bg-gray-100 rounded-3xl flex items-center justify-center text-gray-400">🧔</div>
+          <div className="h-full flex flex-col items-center justify-center text-center space-y-4 opacity-50 grayscale">
+            <div className="w-24 h-24 bg-gray-100 rounded-3xl flex items-center justify-center text-gray-400 overflow-hidden shadow-inner">
+              <img src={BRO_AVATAR_URL} alt="Bro" className="w-full h-full object-cover opacity-60" referrerPolicy="no-referrer" />
+            </div>
             <p className="max-w-xs">{t('chat.placeholder')}</p>
           </div>
         )}
@@ -178,10 +181,10 @@ export const ChatPage: React.FC = () => {
               )}
             >
               <div className={cn(
-                "w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 mb-1",
-                msg.role === 'user' ? "bg-indigo-100 text-indigo-600" : "bg-gray-100 text-gray-600"
+                "w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 mb-1 overflow-hidden shadow-sm",
+                msg.role === 'user' ? "bg-indigo-100 text-indigo-600" : "bg-gray-100"
               )}>
-                {msg.role === 'user' ? <User size={16} /> : <Bot size={16} />}
+                {msg.role === 'user' ? <User size={20} /> : <img src={BRO_AVATAR_URL} alt="Bro" className="w-full h-full object-cover" referrerPolicy="no-referrer" />}
               </div>
               <div className={cn(
                 "p-4 rounded-2xl shadow-sm",
@@ -202,6 +205,9 @@ export const ChatPage: React.FC = () => {
             className="flex items-center gap-2 text-gray-400 p-2"
           >
             <Loader2 size={16} className="animate-spin" />
+            <div className="w-6 h-6 rounded-lg overflow-hidden bg-gray-100">
+              <img src={BRO_AVATAR_URL} alt="Bro" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+            </div>
             <span className="text-xs font-medium">Bro is thinking...</span>
           </motion.div>
         )}

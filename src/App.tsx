@@ -19,6 +19,7 @@ import { logEvent } from 'firebase/analytics';
 import { useLocation } from 'react-router-dom';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { isAfter, isBefore, addDays, parseISO } from 'date-fns';
+import { BRO_AVATAR_URL } from './constants';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading } = useAuth();
@@ -26,7 +27,9 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="w-16 h-16 bg-indigo-100 rounded-3xl flex items-center justify-center text-indigo-600 animate-pulse">🧔</div>
+        <div className="w-24 h-24 bg-indigo-100 rounded-3xl flex items-center justify-center text-indigo-600 animate-pulse overflow-hidden">
+          <img src={BRO_AVATAR_URL} alt="Bro" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+        </div>
       </div>
     );
   }

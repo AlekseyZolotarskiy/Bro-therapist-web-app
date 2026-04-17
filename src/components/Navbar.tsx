@@ -8,6 +8,7 @@ import { logAppEvent } from '../lib/events';
 import { analytics } from '../lib/analytics';
 import { Button } from './Button';
 import { SupportModal } from './SupportModal';
+import { BRO_AVATAR_URL } from '../constants';
 
 export const Navbar: React.FC = () => {
   const { user, logout } = useAuth();
@@ -27,7 +28,9 @@ export const Navbar: React.FC = () => {
     <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-4 py-2 md:top-0 md:bottom-auto md:border-t-0 md:border-b">
       <div className="max-w-5xl mx-auto flex items-center justify-between">
         <Link to="/" className="hidden md:flex items-center gap-2 font-bold text-indigo-600 text-xl">
-          <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">🧔</div>
+          <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center overflow-hidden">
+            <img src={BRO_AVATAR_URL} alt="Bro" className="w-full h-full object-cover" />
+          </div>
           {t('app.name')}
         </Link>
 

@@ -4,6 +4,7 @@ import { LogIn, ShieldCheck, Heart, Sparkles } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { Button } from '../components/Button';
+import { BRO_AVATAR_URL } from '../constants';
 
 export const LoginPage: React.FC = () => {
   const { login } = useAuth();
@@ -23,7 +24,9 @@ export const LoginPage: React.FC = () => {
         className="max-w-md w-full space-y-8"
       >
         <div className="space-y-4">
-          <div className="text-6xl mx-auto w-24 h-24 bg-indigo-100 rounded-3xl flex items-center justify-center shadow-inner">🧔</div>
+          <div className="mx-auto w-32 h-32 bg-indigo-100 rounded-3xl flex items-center justify-center shadow-inner overflow-hidden border-4 border-white">
+            <img src={BRO_AVATAR_URL} alt="Bro" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+          </div>
           <h1 className="text-4xl font-bold text-gray-900 tracking-tight">{t('app.name')}</h1>
           <p className="text-gray-500 text-lg">
             {language === 'ru' 
