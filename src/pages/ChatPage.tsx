@@ -40,7 +40,6 @@ export const ChatPage: React.FC = () => {
 
     const q = query(
       collection(db, `users/${user.uid}/chats/main/messages`),
-      orderBy('createdAt', 'asc'),
       limit(50)
     );
 
@@ -49,7 +48,19 @@ export const ChatPage: React.FC = () => {
         id: doc.id,
         ...doc.data()
       })) as Message[];
-      setMessages(msgs);
+      
+      // Filter out messages with null createdAt if they are not from the current session
+      // or handle the null value for sorting
+      const sortedMsgs = [...msgs].sort((a, b) => {
+        const timeA = a.createdAt?.toMillis?.() || a.createdAt || Date.now();
+        const timeB = b.createdAt?.toMillis?.() || b.createdAt || Date.now();
+        return timeA - timeB;
+      });
+      
+      setMessages(sortedMsgs);
+    }, (err) => {
+      console.error('Firestore snapshot error:', err);
+      setError('Failed to load messages. Please refresh.');
     });
 
     return () => {
@@ -72,6 +83,17 @@ export const ChatPage: React.FC = () => {
     setLoading(true);
     setError(null);
 
+    // Optimistic update
+    const tempId = Math.random().toString(36).substring(7);
+    const optimisticMsg: Message = {
+      id: tempId,
+      role: 'user',
+      text: userText,
+      createdAt: new Date(),
+    };
+    
+    setMessages(prev => [...prev, optimisticMsg]);
+
     try {
       // 1. Save user message to Firestore
       await addDoc(collection(db, `users/${user.uid}/chats/main/messages`), {
@@ -84,12 +106,7 @@ export const ChatPage: React.FC = () => {
       analytics.trackChatMessage(messages.length + 1);
 
       // 2. Generate AI response
-      const history = messages.concat({ 
-        id: 'temp', 
-        role: 'user', 
-        text: userText, 
-        createdAt: Date.now() 
-      }).map(m => ({
+      const history = messages.concat(optimisticMsg).map(m => ({
         role: m.role,
         parts: [{ text: m.text }]
       }));
