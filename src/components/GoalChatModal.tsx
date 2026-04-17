@@ -9,6 +9,7 @@ import { generateCBTResponse } from '../lib/gemini';
 import { analytics } from '../lib/analytics';
 import { Button } from './Button';
 import { cn } from '../lib/utils';
+import { BRO_AVATAR_URL } from '../constants';
 
 interface Message {
   id: string;
@@ -148,8 +149,8 @@ export const GoalChatModal: React.FC<GoalChatModalProps> = ({ isOpen, onClose, g
           >
             <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-indigo-600 text-white">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-white/20 rounded-2xl flex items-center justify-center">
-                  <Bot size={24} />
+                <div className="w-10 h-10 bg-white rounded-2xl flex items-center justify-center overflow-hidden border border-white/20">
+                  <img src={BRO_AVATAR_URL} alt="Bro" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                 </div>
                 <div>
                   <h2 className="font-bold leading-tight">{goal.title}</h2>
@@ -167,7 +168,9 @@ export const GoalChatModal: React.FC<GoalChatModalProps> = ({ isOpen, onClose, g
             >
               {messages.length === 0 && (
                 <div className="h-full flex flex-col items-center justify-center text-center space-y-4 opacity-30">
-                  <Bot size={48} />
+                  <div className="w-24 h-24 bg-gray-100 rounded-3xl flex items-center justify-center overflow-hidden">
+                    <img src={BRO_AVATAR_URL} alt="Bro" className="w-full h-full object-cover opacity-60" referrerPolicy="no-referrer" />
+                  </div>
                   <p className="max-w-xs font-medium">{t('goals.chat_placeholder')}</p>
                 </div>
               )}
@@ -181,10 +184,10 @@ export const GoalChatModal: React.FC<GoalChatModalProps> = ({ isOpen, onClose, g
                   )}
                 >
                   <div className={cn(
-                    "w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 mb-1",
-                    msg.role === 'user' ? "bg-indigo-100 text-indigo-600" : "bg-gray-100 text-gray-600"
+                    "w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 mb-1 overflow-hidden",
+                    msg.role === 'user' ? "bg-indigo-100 text-indigo-600" : "bg-gray-100"
                   )}>
-                    {msg.role === 'user' ? <User size={16} /> : <Bot size={16} />}
+                    {msg.role === 'user' ? <User size={16} /> : <img src={BRO_AVATAR_URL} alt="Bro" className="w-full h-full object-cover" referrerPolicy="no-referrer" />}
                   </div>
                   <div className={cn(
                     "p-4 rounded-2xl shadow-sm",

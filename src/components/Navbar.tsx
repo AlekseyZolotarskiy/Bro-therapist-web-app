@@ -29,7 +29,7 @@ export const Navbar: React.FC = () => {
       <div className="max-w-5xl mx-auto flex items-center justify-between">
         <Link to="/" className="hidden md:flex items-center gap-2 font-bold text-indigo-600 text-xl">
           <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center overflow-hidden">
-            <img src={BRO_AVATAR_URL} alt="Bro" className="w-full h-full object-cover" />
+            <img src={BRO_AVATAR_URL} alt="Bro" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
           </div>
           {t('app.name')}
         </Link>
@@ -95,7 +95,7 @@ export const Navbar: React.FC = () => {
             <Languages size={20} />
           </Button>
           <div className="flex items-center gap-2 pl-4 border-l">
-            <img src={user.photoURL || ''} alt={user.displayName || ''} className="w-8 h-8 rounded-full" />
+            <img src={user.photoURL || ''} alt={user.displayName || ''} className="w-8 h-8 rounded-full" referrerPolicy="no-referrer" />
             <Button variant="ghost" size="icon" onClick={logout}>
               <LogOut size={20} />
             </Button>
