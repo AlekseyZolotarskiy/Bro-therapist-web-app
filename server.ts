@@ -32,10 +32,12 @@ async function startServer() {
 
   // Diagnostic endpoint to check if secrets are loaded
   app.get("/api/debug-s2s", (req, res) => {
+    const allKeys = Object.keys(process.env);
     res.json({
       hasId: !!(process.env.GA4_MEASUREMENT_ID || process.env.VITE_GA4_MEASUREMENT_ID || firebaseConfig.measurementId),
       hasSecret: !!(process.env.GA4_API_SECRET || process.env.VITE_GA4_API_SECRET),
-      envKeys: Object.keys(process.env).filter(k => k.startsWith('GA4_') || k.startsWith('VITE_GA4_') || k.includes('GEMINI')),
+      envKeys: allKeys.filter(k => k.includes('GA4') || k.includes('GEMINI')),
+      allKeys: allKeys, // This will show every key name available to the container
       measurementIdSource: (process.env.GA4_MEASUREMENT_ID || process.env.VITE_GA4_MEASUREMENT_ID) ? 'env' : (firebaseConfig.measurementId ? 'config' : 'none')
     });
   });
