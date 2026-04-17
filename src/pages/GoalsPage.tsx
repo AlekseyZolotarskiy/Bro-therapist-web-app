@@ -101,6 +101,7 @@ export const GoalsPage: React.FC = () => {
 
       // S2S Tracking for Promises
       if (newGoal.isPromise) {
+        console.log("Triggering S2S tracking for promise:", newGoal.title);
         fetch('/api/track-promise', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -109,7 +110,10 @@ export const GoalsPage: React.FC = () => {
             amount: newGoal.deposit,
             title: newGoal.title
           })
-        }).catch(err => console.error("S2S Trigger Error:", err));
+        })
+        .then(res => res.json())
+        .then(data => console.log("S2S Tracking Result:", data))
+        .catch(err => console.error("S2S Trigger Error:", err));
       }
 
       setNewGoal({ 

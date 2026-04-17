@@ -19,37 +19,56 @@ async function startServer() {
     const measurementId = process.env.GA4_MEASUREMENT_ID;
     const apiSecret = process.env.GA4_API_SECRET;
 
+    console.log("--- GA4 S2S Incoming Request ---");
+    console.log(`User: ${userId}, Amount: ${amount}, Title: ${title}`);
+
     if (!measurementId || !apiSecret) {
-      console.warn("GA4 S2S: Missing measurementId or apiSecret. Skipping tracking.");
+      console.error("GA4 S2S ERROR: Missing environment variables.");
+      console.log("Expected GA4_MEASUREMENT_ID and GA4_API_SECRET to be set.");
       return res.status(200).json({ status: "skipped", reason: "missing_config" });
     }
 
     try {
-      const url = `https://www.google-analytics.com/mp/collect?measurement_id=${measurementId}&api_secret=${apiSecret}`;
-      
+      // Step 1: Validate payload using GA4 debug endpoint
+      const debugUrl = `https://www.google-analytics.com/debug/mp/collect?measurement_id=${measurementId}&api_secret=${apiSecret}`;
       const payload = {
-        client_id: userId || 'anonymous_bro', // S2S requires a client_id
+        client_id: userId || 'anonymous_bro',
         events: [{
           name: 'promise_created_s2s',
           params: {
-            amount: amount,
+            amount: Number(amount),
             goal_title: title,
-            engagement_time_msec: 1
+            debug_mode: true // This helps show up in DebugView
           }
         }]
       };
 
+      const debugResponse = await fetch(debugUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const debugResult = await debugResponse.json();
+      
+      console.log(`GA4 S2S Validation Result:`, JSON.stringify(debugResult));
+
+      // Step 2: If valid or even if we just want to try the real one
+      const url = `https://www.google-analytics.com/mp/collect?measurement_id=${measurementId}&api_secret=${apiSecret}`;
       const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
 
-      console.log(`GA4 S2S Tracked: ${title} with $${amount}. Status: ${response.status}`);
-      res.json({ status: "ok" });
+      console.log(`GA4 S2S Real Call Status: ${response.status}`);
+      res.json({ 
+        status: "ok", 
+        debug: debugResult,
+        ga_status: response.status 
+      });
     } catch (error) {
-      console.error("GA4 S2S Error:", error);
-      res.status(500).json({ status: "error" });
+      console.error("GA4 S2S CRITICAL ERROR:", error);
+      res.status(500).json({ status: "error", message: String(error) });
     }
   });
 
