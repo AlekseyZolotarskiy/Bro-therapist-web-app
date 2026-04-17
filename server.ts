@@ -37,17 +37,29 @@ async function startServer() {
       hasId: !!(process.env.GA4_MEASUREMENT_ID || process.env.VITE_GA4_MEASUREMENT_ID || firebaseConfig.measurementId),
       hasSecret: !!(process.env.GA4_API_SECRET || process.env.VITE_GA4_API_SECRET),
       envKeys: allKeys.filter(k => k.includes('GA4') || k.includes('GEMINI')),
-      allKeys: allKeys, // This will show every key name available to the container
+      projectId: firebaseConfig.projectId,
       measurementIdSource: (process.env.GA4_MEASUREMENT_ID || process.env.VITE_GA4_MEASUREMENT_ID) ? 'env' : (firebaseConfig.measurementId ? 'config' : 'none')
     });
   });
 
   // GA4 Measurement Protocol (S2S) Route
   app.post("/api/track-promise", async (req, res) => {
-    const { userId, amount, title } = req.body;
-    // Prefer env var (including VITE_ prefix), fallback to config
+    const { userId, amount, title, forceSecret } = req.body;
+    
+    // 1. Try to find the secret in: 
+    // - request body (for first-time setup or debug)
+    // - env vars
+    // - (future: firestore, but we'll start with body/env)
     const measurementId = process.env.GA4_MEASUREMENT_ID || process.env.VITE_GA4_MEASUREMENT_ID || firebaseConfig.measurementId;
-    const apiSecret = process.env.GA4_API_SECRET || process.env.VITE_GA4_API_SECRET;
+    const apiSecret = forceSecret || process.env.GA4_API_SECRET || process.env.VITE_GA4_API_SECRET;
+
+    if (!measurementId || !apiSecret) {
+      return res.status(200).json({ 
+        status: "skipped", 
+        reason: "missing_config",
+        details: { hasId: !!measurementId, hasSecret: !!apiSecret } 
+      });
+    }
 
     console.log("--- GA4 S2S Incoming Request ---");
     console.log(`User: ${userId}, Amount: ${amount}, Title: ${title}`);

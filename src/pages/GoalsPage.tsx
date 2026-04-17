@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Target, Plus, CheckCircle2, Circle, Trash2, Sparkles, Loader2, ShieldCheck, Clock, RefreshCw, DollarSign, MessageCircle } from 'lucide-react';
-import { collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc, updateDoc, serverTimestamp, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -13,6 +13,7 @@ import { cn } from '../lib/utils';
 import { logAppEvent } from '../lib/events';
 import { format, addDays, addWeeks, addMonths, parseISO, differenceInDays, isAfter } from 'date-fns';
 import { ru, enUS } from 'date-fns/locale';
+import { Settings, ShieldCheck as Shield, Save, X } from 'lucide-react';
 
 interface Task {
   id: string;
@@ -49,11 +50,25 @@ export const GoalsPage: React.FC = () => {
   const [loadingReport, setLoadingReport] = useState(false);
   const [reportError, setReportError] = useState<string | null>(null);
   const [selectedGoalForChat, setSelectedGoalForChat] = useState<Goal | null>(null);
+  const [showS2SSettings, setShowS2SSettings] = useState(false);
+  const [s2sConfig, setS2SConfig] = useState({ secret: '', measurementId: '' });
+  const [loadingS2S, setLoadingS2S] = useState(false);
+
+  const isAdmin = user?.email === 'lesha.zolotarskij@gmail.com';
 
   const dateLocale = language === 'ru' ? ru : enUS;
 
   useEffect(() => {
     if (!user) return;
+
+    // Load S2S Config for admin
+    if (isAdmin) {
+      getDoc(doc(db, 'config/tracking')).then(snap => {
+        if (snap.exists()) {
+          setS2SConfig(snap.data() as any);
+        }
+      });
+    }
 
     const q = query(
       collection(db, `users/${user.uid}/goals`),
@@ -108,7 +123,8 @@ export const GoalsPage: React.FC = () => {
           body: JSON.stringify({
             userId: user.uid,
             amount: newGoal.deposit,
-            title: newGoal.title
+            title: newGoal.title,
+            forceSecret: s2sConfig.secret // Pass the secret from Firestore storage
           })
         })
         .then(res => res.json())
@@ -178,6 +194,21 @@ export const GoalsPage: React.FC = () => {
     }
   };
 
+  const handleSaveS2S = async () => {
+    if (!isAdmin) return;
+    setLoadingS2S(true);
+    try {
+      await setDoc(doc(db, 'config/tracking'), s2sConfig);
+      setShowS2SSettings(false);
+      alert('S2S Settings Saved to Firestore!');
+    } catch (e) {
+      console.error(e);
+      alert('Error saving S2S settings. Check permissions.');
+    } finally {
+      setLoadingS2S(false);
+    }
+  };
+
   return (
     <div className="space-y-8 pb-12">
       <header className="flex items-center justify-between bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
@@ -190,11 +221,71 @@ export const GoalsPage: React.FC = () => {
             <p className="text-sm text-gray-500 font-medium">{goals.length} active goals</p>
           </div>
         </div>
-        <Button onClick={() => setShowAdd(true)} className="gap-2">
-          <Plus size={20} />
-          <span className="hidden sm:inline">{t('goals.add')}</span>
-        </Button>
+        <div className="flex items-center gap-2">
+          {isAdmin && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => setShowS2SSettings(true)}
+              className="text-indigo-400 hover:text-indigo-600 hover:bg-indigo-50"
+              title="S2S Settings"
+            >
+              <Shield size={20} />
+            </Button>
+          )}
+          <Button onClick={() => setShowAdd(true)} className="gap-2">
+            <Plus size={20} />
+            <span className="hidden sm:inline">{t('goals.add')}</span>
+          </Button>
+        </div>
       </header>
+
+      {showS2SSettings && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[200] flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white w-full max-w-md rounded-[2rem] p-8 shadow-2xl space-y-6"
+          >
+            <div className="flex items-center gap-3 text-indigo-600">
+              <Shield size={24} />
+              <h2 className="text-2xl font-black tracking-tight">S2S CONFIG</h2>
+            </div>
+            
+            <p className="text-sm text-gray-500 leading-relaxed font-medium">
+              This config is stored securely in Firestore and only accessible by you. 
+              It will be passed to the server for S2S tracking.
+            </p>
+
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] uppercase tracking-widest font-bold text-gray-400">GA4 API Secret</label>
+                <input
+                  type="password"
+                  value={s2sConfig.secret}
+                  onChange={(e) => setS2SConfig(prev => ({ ...prev, secret: e.target.value }))}
+                  className="w-full bg-gray-50 border-none rounded-2xl px-5 py-3.5 font-mono text-sm focus:ring-2 focus:ring-indigo-500"
+                  placeholder="Paste your API Secret here..."
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <Button variant="secondary" className="flex-1 h-12 rounded-2xl" onClick={() => setShowS2SSettings(false)}>
+                Cancel
+              </Button>
+              <Button 
+                className="flex-1 h-12 rounded-2xl gap-2" 
+                onClick={handleSaveS2S}
+                disabled={loadingS2S}
+              >
+                {loadingS2S ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
+                Save Config
+              </Button>
+            </div>
+          </motion.div>
+        </div>
+      )}
 
       {report && (
         <motion.div
