@@ -33,19 +33,19 @@ async function startServer() {
   // Diagnostic endpoint to check if secrets are loaded
   app.get("/api/debug-s2s", (req, res) => {
     res.json({
-      hasId: !!(process.env.GA4_MEASUREMENT_ID || firebaseConfig.measurementId),
-      hasSecret: !!process.env.GA4_API_SECRET,
-      envKeys: Object.keys(process.env).filter(k => k.startsWith('GA4_') || k.includes('GEMINI')),
-      measurementIdSource: process.env.GA4_MEASUREMENT_ID ? 'env' : (firebaseConfig.measurementId ? 'config' : 'none')
+      hasId: !!(process.env.GA4_MEASUREMENT_ID || process.env.VITE_GA4_MEASUREMENT_ID || firebaseConfig.measurementId),
+      hasSecret: !!(process.env.GA4_API_SECRET || process.env.VITE_GA4_API_SECRET),
+      envKeys: Object.keys(process.env).filter(k => k.startsWith('GA4_') || k.startsWith('VITE_GA4_') || k.includes('GEMINI')),
+      measurementIdSource: (process.env.GA4_MEASUREMENT_ID || process.env.VITE_GA4_MEASUREMENT_ID) ? 'env' : (firebaseConfig.measurementId ? 'config' : 'none')
     });
   });
 
   // GA4 Measurement Protocol (S2S) Route
   app.post("/api/track-promise", async (req, res) => {
     const { userId, amount, title } = req.body;
-    // Prefer env var, fallback to firebase-applet-config.json
-    const measurementId = process.env.GA4_MEASUREMENT_ID || firebaseConfig.measurementId;
-    const apiSecret = process.env.GA4_API_SECRET;
+    // Prefer env var (including VITE_ prefix), fallback to config
+    const measurementId = process.env.GA4_MEASUREMENT_ID || process.env.VITE_GA4_MEASUREMENT_ID || firebaseConfig.measurementId;
+    const apiSecret = process.env.GA4_API_SECRET || process.env.VITE_GA4_API_SECRET;
 
     console.log("--- GA4 S2S Incoming Request ---");
     console.log(`User: ${userId}, Amount: ${amount}, Title: ${title}`);
