@@ -7,6 +7,22 @@ import fs from "fs";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Load firebase config to get measurementId automatically for S2S
+let firebaseConfig: any = {};
+try {
+  const configPath = path.join(process.cwd(), 'firebase-applet-config.json');
+  if (fs.existsSync(configPath)) {
+    firebaseConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+  } else {
+    const altPath = path.resolve(__dirname, 'firebase-applet-config.json');
+    if (fs.existsSync(altPath)) {
+      firebaseConfig = JSON.parse(fs.readFileSync(altPath, 'utf8'));
+    }
+  }
+} catch (e) {
+  console.error("Failed to load firebase config for S2S:", e);
+}
+
 async function startServer() {
   const app = express();
   const PORT = Number(process.env.PORT) || 3000;
@@ -16,16 +32,21 @@ async function startServer() {
   // GA4 Measurement Protocol (S2S) Route
   app.post("/api/track-promise", async (req, res) => {
     const { userId, amount, title } = req.body;
-    const measurementId = process.env.GA4_MEASUREMENT_ID;
+    // Prefer env var, fallback to firebase-applet-config.json
+    const measurementId = process.env.GA4_MEASUREMENT_ID || firebaseConfig.measurementId;
     const apiSecret = process.env.GA4_API_SECRET;
 
     console.log("--- GA4 S2S Incoming Request ---");
     console.log(`User: ${userId}, Amount: ${amount}, Title: ${title}`);
+    console.log(`Using Measurement ID: ${measurementId}`);
 
     if (!measurementId || !apiSecret) {
-      console.error("GA4 S2S ERROR: Missing environment variables.");
-      console.log("Expected GA4_MEASUREMENT_ID and GA4_API_SECRET to be set.");
-      return res.status(200).json({ status: "skipped", reason: "missing_config" });
+      console.error("GA4 S2S ERROR: Missing config (ID or Secret).");
+      return res.status(200).json({ 
+        status: "skipped", 
+        reason: "missing_config",
+        details: { hasId: !!measurementId, hasSecret: !!apiSecret } 
+      });
     }
 
     try {
