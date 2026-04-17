@@ -99,6 +99,19 @@ export const GoalsPage: React.FC = () => {
         durationDays
       });
 
+      // S2S Tracking for Promises
+      if (newGoal.isPromise) {
+        fetch('/api/track-promise', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: user.uid,
+            amount: newGoal.deposit,
+            title: newGoal.title
+          })
+        }).catch(err => console.error("S2S Trigger Error:", err));
+      }
+
       setNewGoal({ 
         title: '', 
         deadline: '', 
