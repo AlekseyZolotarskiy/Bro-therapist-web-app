@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { LogIn, ShieldCheck, Heart, Sparkles } from 'lucide-react';
+import { LogIn, ShieldCheck, Heart, Sparkles, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { Button } from '../components/Button';
@@ -9,6 +9,7 @@ import { BRO_AVATAR_URL } from '../constants';
 export const LoginPage: React.FC = () => {
   const { login } = useAuth();
   const { t, language, setLanguage } = useLanguage();
+  const [imgError, setImgError] = React.useState(false);
 
   const features = [
     { icon: ShieldCheck, text: language === 'ru' ? 'Конфиденциально и безопасно' : 'Confidential and secure' },
@@ -24,12 +25,15 @@ export const LoginPage: React.FC = () => {
         className="max-w-md w-full space-y-8"
       >
         <div className="space-y-4">
-          <div className="mx-auto w-32 h-32 bg-indigo-100 rounded-3xl flex items-center justify-center shadow-inner overflow-hidden border-4 border-white">
-            <img 
-              src={BRO_AVATAR_URL} 
-              alt="Bro" 
-              className="w-full h-full object-cover" 
-            />
+          <div className="mx-auto w-32 h-32 bg-indigo-100 rounded-3xl flex items-center justify-center shadow-inner overflow-hidden border-4 border-white text-indigo-400">
+            {!imgError ? (
+              <img 
+                src={BRO_AVATAR_URL} 
+                alt="Bro" 
+                className="w-full h-full object-cover" 
+                onError={() => setImgError(true)}
+              />
+            ) : <User size={64} />}
           </div>
           <h1 className="text-4xl font-bold text-gray-900 tracking-tight">{t('app.name')}</h1>
           <p className="text-gray-500 text-lg">

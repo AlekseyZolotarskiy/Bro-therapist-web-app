@@ -30,6 +30,11 @@ export const ChatPage: React.FC = () => {
   const [persistentContext, setPersistentContext] = useState<string | null>(null);
   const [showClearModal, setShowClearModal] = useState(false);
   const [clearing, setClearing] = useState(false);
+  const [imgErrors, setImgErrors] = useState<Record<string, boolean>>({});
+
+  const handleImgError = (id: string) => {
+    setImgErrors(prev => ({ ...prev, [id]: true }));
+  };
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -188,11 +193,14 @@ export const ChatPage: React.FC = () => {
       <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white/80 backdrop-blur-sm sticky top-0 z-10">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 bg-indigo-100 rounded-2xl flex items-center justify-center text-indigo-600 overflow-hidden shadow-sm border border-gray-50 uppercase font-bold tracking-widest text-xs">
-            <img 
-              src={BRO_AVATAR_URL} 
-              alt="Bro" 
-              className="w-full h-full object-cover" 
-            />
+            {!imgErrors['header_avatar'] ? (
+              <img 
+                src={BRO_AVATAR_URL} 
+                alt="Bro" 
+                className="w-full h-full object-cover" 
+                onError={() => handleImgError('header_avatar')}
+              />
+            ) : <User size={24} />}
           </div>
           <div>
             <h2 className="font-bold text-gray-900 leading-tight">Bro Therapist</h2>
@@ -293,12 +301,15 @@ export const ChatPage: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               className="h-full flex flex-col items-center justify-center text-center space-y-6 opacity-40 py-12"
             >
-              <div className="w-24 h-24 bg-gray-100 rounded-3xl flex items-center justify-center overflow-hidden border border-gray-50">
-                <img 
-                  src={BRO_AVATAR_URL} 
-                  alt="Bro" 
-                  className="w-full h-full object-cover grayscale opacity-60" 
-                />
+              <div className="w-24 h-24 bg-indigo-100 rounded-3xl flex items-center justify-center overflow-hidden border border-gray-50 text-indigo-400">
+                {!imgErrors['placeholder_avatar'] ? (
+                  <img 
+                    src={BRO_AVATAR_URL} 
+                    alt="Bro" 
+                    className="w-full h-full object-cover grayscale opacity-60" 
+                    onError={() => handleImgError('placeholder_avatar')}
+                  />
+                ) : <User size={48} />}
               </div>
               <div className="space-y-2">
                 <p className="max-w-xs text-lg font-medium text-gray-900 leading-relaxed">
@@ -329,19 +340,23 @@ export const ChatPage: React.FC = () => {
                 msg.role === 'user' ? "bg-indigo-600 text-white border-indigo-700 font-bold text-xs" : "bg-white border-gray-100"
               )}>
                 {msg.role === 'user' ? (
-                  user?.photoURL ? (
+                  (user?.photoURL && !imgErrors[`msg_${msg.id}`]) ? (
                     <img 
                       src={user.photoURL} 
                       alt="You" 
                       className="w-full h-full object-cover" 
+                      onError={() => handleImgError(`msg_${msg.id}`)}
                     />
                   ) : <User size={20} />
                 ) : (
-                  <img 
-                    src={BRO_AVATAR_URL} 
-                    alt="Bro" 
-                    className="w-full h-full object-cover" 
-                  />
+                  !imgErrors[`msg_${msg.id}`] ? (
+                    <img 
+                      src={BRO_AVATAR_URL} 
+                      alt="Bro" 
+                      className="w-full h-full object-cover" 
+                      onError={() => handleImgError(`msg_${msg.id}`)}
+                    />
+                  ) : <User size={20} />
                 )}
               </div>
               <div className={cn(
@@ -363,12 +378,15 @@ export const ChatPage: React.FC = () => {
             className="flex items-center gap-2 text-gray-400 p-2"
           >
             <Loader2 size={16} className="animate-spin" />
-            <div className="w-6 h-6 rounded-lg overflow-hidden bg-gray-100 border border-gray-50 shadow-xs">
-              <img 
-                src={BRO_AVATAR_URL} 
-                alt="Bro" 
-                className="w-full h-full object-cover grayscale opacity-60" 
-              />
+            <div className="w-6 h-6 rounded-lg overflow-hidden bg-indigo-50 border border-gray-50 shadow-xs flex items-center justify-center text-indigo-300">
+              {!imgErrors['loading_avatar'] ? (
+                <img 
+                  src={BRO_AVATAR_URL} 
+                  alt="Bro" 
+                  className="w-full h-full object-cover grayscale opacity-60" 
+                  onError={() => handleImgError('loading_avatar')}
+                />
+              ) : <User size={12} />}
             </div>
             <span className="text-xs font-medium">Bro is thinking...</span>
           </motion.div>
