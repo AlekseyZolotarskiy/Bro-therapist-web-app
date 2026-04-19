@@ -29,8 +29,6 @@ export const LoginPage: React.FC = () => {
               src={BRO_AVATAR_URL} 
               alt="Bro" 
               className="w-full h-full object-cover" 
-              referrerPolicy="no-referrer"
-              crossOrigin="anonymous"
             />
           </div>
           <h1 className="text-4xl font-bold text-gray-900 tracking-tight">{t('app.name')}</h1>

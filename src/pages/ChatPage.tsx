@@ -192,8 +192,6 @@ export const ChatPage: React.FC = () => {
               src={BRO_AVATAR_URL} 
               alt="Bro" 
               className="w-full h-full object-cover" 
-              referrerPolicy="no-referrer" 
-              crossOrigin="anonymous"
             />
           </div>
           <div>
@@ -208,7 +206,7 @@ export const ChatPage: React.FC = () => {
           className="text-gray-400 hover:text-red-500 hover:bg-red-50"
         >
           <Trash2 size={18} className="mr-2" />
-          <span className="text-sm font-semibold">{t('chat.clear_btn') || 'Очистить историю'}</span>
+          <span className="text-sm font-semibold">{t('chat.clear_btn') || 'Очистить чат'}</span>
         </Button>
       </div>
 
@@ -300,8 +298,6 @@ export const ChatPage: React.FC = () => {
                   src={BRO_AVATAR_URL} 
                   alt="Bro" 
                   className="w-full h-full object-cover grayscale opacity-60" 
-                  referrerPolicy="no-referrer"
-                  crossOrigin="anonymous"
                 />
               </div>
               <div className="space-y-2">
@@ -338,8 +334,6 @@ export const ChatPage: React.FC = () => {
                       src={user.photoURL} 
                       alt="You" 
                       className="w-full h-full object-cover" 
-                      referrerPolicy="no-referrer" 
-                      crossOrigin="anonymous"
                     />
                   ) : <User size={20} />
                 ) : (
@@ -347,8 +341,6 @@ export const ChatPage: React.FC = () => {
                     src={BRO_AVATAR_URL} 
                     alt="Bro" 
                     className="w-full h-full object-cover" 
-                    referrerPolicy="no-referrer" 
-                    crossOrigin="anonymous"
                   />
                 )}
               </div>
@@ -376,8 +368,6 @@ export const ChatPage: React.FC = () => {
                 src={BRO_AVATAR_URL} 
                 alt="Bro" 
                 className="w-full h-full object-cover grayscale opacity-60" 
-                referrerPolicy="no-referrer" 
-                crossOrigin="anonymous"
               />
             </div>
             <span className="text-xs font-medium">Bro is thinking...</span>
