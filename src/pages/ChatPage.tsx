@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Send, Plus, Bot, User, Loader2 } from 'lucide-react';
-import { collection, addDoc, query, orderBy, onSnapshot, limit, serverTimestamp, Timestamp, doc, updateDoc, onSnapshot as onDocSnapshot } from 'firebase/firestore';
+import { Send, Trash2, Bot, User, Loader2, MessageSquare, Sparkles, RotateCcw, X } from 'lucide-react';
+import { collection, addDoc, query, orderBy, onSnapshot, limit, serverTimestamp, Timestamp, doc, updateDoc, onSnapshot as onDocSnapshot, getDocs, writeBatch } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
-import { generateCBTResponse, extractNameFromChat } from '../lib/gemini';
+import { generateCBTResponse, extractNameFromChat, summarizeChatContext, CBT_SYSTEM_INSTRUCTION } from '../lib/gemini';
 import { logAppEvent } from '../lib/events';
 import { analytics } from '../lib/analytics';
 import { Button } from '../components/Button';
@@ -21,21 +21,26 @@ interface Message {
 
 export const ChatPage: React.FC = () => {
   const { user } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [preferredName, setPreferredName] = useState<string | null>(null);
+  const [persistentContext, setPersistentContext] = useState<string | null>(null);
+  const [showClearModal, setShowClearModal] = useState(false);
+  const [clearing, setClearing] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!user) return;
 
-    // Listen to preferred name
+    // Listen to profile data
     const unsubName = onDocSnapshot(doc(db, 'users', user.uid), (snap) => {
       if (snap.exists()) {
-        setPreferredName(snap.data().preferredName || null);
+        const data = snap.data();
+        setPreferredName(data.preferredName || null);
+        setPersistentContext(data.aiContext || null);
       }
     });
 
@@ -76,6 +81,39 @@ export const ChatPage: React.FC = () => {
     }
   }, [messages]);
 
+  const handleClearChat = async (keepContext: boolean) => {
+    if (!user || clearing) return;
+    setClearing(true);
+    try {
+      if (keepContext && messages.length > 0) {
+        // Summarize and save context
+        const newContext = await summarizeChatContext(messages, persistentContext);
+        await updateDoc(doc(db, 'users', user.uid), {
+          aiContext: newContext
+        });
+      } else if (!keepContext) {
+        // Reset context
+        await updateDoc(doc(db, 'users', user.uid), {
+          aiContext: null
+        });
+      }
+
+      // Delete all main messages
+      const msgsQuery = query(collection(db, `users/${user.uid}/chats/main/messages`));
+      const snaps = await getDocs(msgsQuery);
+      const batch = writeBatch(db);
+      snaps.docs.forEach(d => batch.delete(d.ref));
+      await batch.commit();
+
+      setShowClearModal(false);
+      logAppEvent('chat_cleared', { keepContext });
+    } catch (err) {
+      console.error('Error clearing chat:', err);
+    } finally {
+      setClearing(false);
+    }
+  };
+
   const handleSend = async () => {
     if (!input.trim() || loading || !user) return;
 
@@ -112,7 +150,13 @@ export const ChatPage: React.FC = () => {
         parts: [{ text: m.text }]
       }));
 
-      const responseText = await generateCBTResponse(history);
+      // Inject persistent context into system instruction
+      let systemPrompt = CBT_SYSTEM_INSTRUCTION;
+      if (persistentContext) {
+        systemPrompt += `\n\nUSER CONTEXT (Remember these key things about the user):\n${persistentContext}`;
+      }
+
+      const responseText = await generateCBTResponse(history, systemPrompt);
       
       // 3. Save AI response to Firestore
       await addDoc(collection(db, `users/${user.uid}/chats/main/messages`), {
@@ -143,31 +187,135 @@ export const ChatPage: React.FC = () => {
     <div className="flex flex-col h-[calc(100vh-12rem)] md:h-[calc(100vh-8rem)] bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
       <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-white/80 backdrop-blur-sm sticky top-0 z-10">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 bg-indigo-100 rounded-2xl flex items-center justify-center text-indigo-600 overflow-hidden shadow-sm">
-            <img src={BRO_AVATAR_URL} alt="Bro" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+          <div className="w-12 h-12 bg-indigo-100 rounded-2xl flex items-center justify-center text-indigo-600 overflow-hidden shadow-sm border border-gray-50 uppercase font-bold tracking-widest text-xs">
+            <img 
+              src={BRO_AVATAR_URL} 
+              alt="Bro" 
+              className="w-full h-full object-cover" 
+              referrerPolicy="no-referrer" 
+              crossOrigin="anonymous"
+            />
           </div>
           <div>
             <h2 className="font-bold text-gray-900 leading-tight">Bro Therapist</h2>
             <p className="text-xs text-green-500 font-medium">Online</p>
           </div>
         </div>
-        <Button variant="ghost" size="icon" onClick={() => setMessages([])}>
-          <Plus size={20} />
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={() => setShowClearModal(true)}
+          className="text-gray-400 hover:text-red-500 hover:bg-red-50"
+        >
+          <Trash2 size={18} className="mr-2" />
+          <span className="text-sm font-semibold">{t('chat.clear_btn') || 'Очистить историю'}</span>
         </Button>
       </div>
 
-      <div 
-        ref={scrollRef}
-        className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth"
-      >
-        {messages.length === 0 && (
-          <div className="h-full flex flex-col items-center justify-center text-center space-y-4 opacity-50 grayscale">
-            <div className="w-24 h-24 bg-gray-100 rounded-3xl flex items-center justify-center text-gray-400 overflow-hidden shadow-inner">
-              <img src={BRO_AVATAR_URL} alt="Bro" className="w-full h-full object-cover opacity-60" referrerPolicy="no-referrer" />
-            </div>
-            <p className="max-w-xs">{t('chat.placeholder')}</p>
+      <AnimatePresence>
+        {showClearModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-[32px] p-8 w-full max-w-md shadow-2xl overflow-hidden relative border border-gray-100"
+            >
+              <div className="flex flex-col items-center text-center space-y-4 mb-8">
+                <div className="w-16 h-16 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center">
+                  <RotateCcw size={32} />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-2xl font-bold text-gray-900">{t('chat.clear_title') || 'Очистить чат?'}</h3>
+                  <p className="text-gray-500 leading-relaxed">
+                    {t('chat.clear_desc') || 'Выбери, как мы начнем заново. Бро может всё забыть или сохранить самое важное.'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <button 
+                  className="w-full flex items-center p-4 gap-4 bg-indigo-50 hover:bg-indigo-100 rounded-2xl transition-all group border border-indigo-100/50"
+                  disabled={clearing}
+                  onClick={() => handleClearChat(true)}
+                >
+                  <div className="w-12 h-12 bg-white text-indigo-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm transition-transform group-hover:scale-110">
+                    <Sparkles size={24} />
+                  </div>
+                  <div className="text-left">
+                    <div className="font-bold text-gray-900 text-lg">{t('chat.keep_context') || 'Сохранить контекст'}</div>
+                    <div className="text-sm text-indigo-600/80 font-medium">{t('chat.keep_context_desc') || 'Я запомню твое имя и главные темы.'}</div>
+                  </div>
+                </button>
+
+                <button 
+                  className="w-full flex items-center p-4 gap-4 bg-white hover:bg-red-50 rounded-2xl transition-all group border border-gray-100 hover:border-red-100"
+                  disabled={clearing}
+                  onClick={() => handleClearChat(false)}
+                >
+                  <div className="w-12 h-12 bg-gray-50 text-gray-400 group-hover:bg-white group-hover:text-red-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm transition-transform group-hover:scale-110">
+                    <Trash2 size={24} />
+                  </div>
+                  <div className="text-left">
+                    <div className="font-bold text-gray-900 text-lg group-hover:text-red-600">{t('chat.reset_all') || 'Полный сброс'}</div>
+                    <div className="text-sm text-gray-500">{t('chat.reset_all_desc') || 'Начнем с нуля, как в первый раз.'}</div>
+                  </div>
+                </button>
+
+                <div className="pt-4 flex gap-3">
+                  <Button 
+                    className="flex-1 h-12 rounded-2xl"
+                    variant="ghost"
+                    disabled={clearing}
+                    onClick={() => setShowClearModal(false)}
+                  >
+                    {t('common.cancel') || 'Отмена'}
+                  </Button>
+                </div>
+              </div>
+
+              {clearing && (
+                <div className="absolute inset-0 bg-white/90 backdrop-blur-[2px] flex flex-col items-center justify-center z-10">
+                  <Loader2 className="animate-spin text-indigo-600 mb-2" size={32} />
+                  <p className="text-sm font-bold text-gray-900">Бро переваривает информацию...</p>
+                </div>
+              )}
+            </motion.div>
           </div>
         )}
+      </AnimatePresence>
+
+      <div 
+        ref={scrollRef}
+        className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6"
+      >
+          {messages.length === 0 && (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="h-full flex flex-col items-center justify-center text-center space-y-6 opacity-40 py-12"
+            >
+              <div className="w-24 h-24 bg-gray-100 rounded-3xl flex items-center justify-center overflow-hidden border border-gray-50">
+                <img 
+                  src={BRO_AVATAR_URL} 
+                  alt="Bro" 
+                  className="w-full h-full object-cover grayscale opacity-60" 
+                  referrerPolicy="no-referrer"
+                  crossOrigin="anonymous"
+                />
+              </div>
+              <div className="space-y-2">
+                <p className="max-w-xs text-lg font-medium text-gray-900 leading-relaxed">
+                  {t('chat.placeholder') || 'Бро на связи. Как прошёл твой день?'}
+                </p>
+                {persistentContext && (
+                  <p className="text-sm text-indigo-600 italic">
+                    {language === 'ru' ? '(Я помню наше прошлое общение)' : '(I remember our previous talk)'}
+                  </p>
+                )}
+              </div>
+            </motion.div>
+          )}
         
         <AnimatePresence initial={false}>
           {messages.map((msg) => (
@@ -181,10 +329,28 @@ export const ChatPage: React.FC = () => {
               )}
             >
               <div className={cn(
-                "w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 mb-1 overflow-hidden shadow-sm",
-                msg.role === 'user' ? "bg-indigo-100 text-indigo-600" : "bg-gray-100"
+                "w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 mb-1 overflow-hidden border shadow-sm",
+                msg.role === 'user' ? "bg-indigo-600 text-white border-indigo-700 font-bold text-xs" : "bg-white border-gray-100"
               )}>
-                {msg.role === 'user' ? <User size={20} /> : <img src={BRO_AVATAR_URL} alt="Bro" className="w-full h-full object-cover" referrerPolicy="no-referrer" />}
+                {msg.role === 'user' ? (
+                  user?.photoURL ? (
+                    <img 
+                      src={user.photoURL} 
+                      alt="You" 
+                      className="w-full h-full object-cover" 
+                      referrerPolicy="no-referrer" 
+                      crossOrigin="anonymous"
+                    />
+                  ) : <User size={20} />
+                ) : (
+                  <img 
+                    src={BRO_AVATAR_URL} 
+                    alt="Bro" 
+                    className="w-full h-full object-cover" 
+                    referrerPolicy="no-referrer" 
+                    crossOrigin="anonymous"
+                  />
+                )}
               </div>
               <div className={cn(
                 "p-4 rounded-2xl shadow-sm",
@@ -205,8 +371,14 @@ export const ChatPage: React.FC = () => {
             className="flex items-center gap-2 text-gray-400 p-2"
           >
             <Loader2 size={16} className="animate-spin" />
-            <div className="w-6 h-6 rounded-lg overflow-hidden bg-gray-100">
-              <img src={BRO_AVATAR_URL} alt="Bro" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+            <div className="w-6 h-6 rounded-lg overflow-hidden bg-gray-100 border border-gray-50 shadow-xs">
+              <img 
+                src={BRO_AVATAR_URL} 
+                alt="Bro" 
+                className="w-full h-full object-cover grayscale opacity-60" 
+                referrerPolicy="no-referrer" 
+                crossOrigin="anonymous"
+              />
             </div>
             <span className="text-xs font-medium">Bro is thinking...</span>
           </motion.div>

@@ -9,6 +9,7 @@ export type AppEvent =
   | 'journal_saved' 
   | 'chat_started' 
   | 'chat_milestone'
+  | 'chat_cleared'
   | 'language_switched';
 
 export async function logAppEvent(event: AppEvent, metadata: any = {}, isKey: boolean = false) {

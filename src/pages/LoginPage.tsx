@@ -25,7 +25,13 @@ export const LoginPage: React.FC = () => {
       >
         <div className="space-y-4">
           <div className="mx-auto w-32 h-32 bg-indigo-100 rounded-3xl flex items-center justify-center shadow-inner overflow-hidden border-4 border-white">
-            <img src={BRO_AVATAR_URL} alt="Bro" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+            <img 
+              src={BRO_AVATAR_URL} 
+              alt="Bro" 
+              className="w-full h-full object-cover" 
+              referrerPolicy="no-referrer"
+              crossOrigin="anonymous"
+            />
           </div>
           <h1 className="text-4xl font-bold text-gray-900 tracking-tight">{t('app.name')}</h1>
           <p className="text-gray-500 text-lg">

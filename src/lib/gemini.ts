@@ -126,3 +126,32 @@ export async function generateGoalReport(goals: any[], language: "ru" | "en") {
     throw new Error(error.message || "Failed to generate report.");
   }
 }
+
+export async function summarizeChatContext(messages: any[], currentContext: string | null) {
+  const history = messages.map(m => `${m.role === 'user' ? 'User' : 'Bro'}: ${m.text}`).join('\n');
+  const prompt = `
+    Analyze this conversation and current context. 
+    Create a very short, bullet-point summary of the most important things Bro learned about the User (name, core problems, mood, recent wins, values).
+    
+    Current Context: ${currentContext || "None"}
+    Conversation:
+    ${history}
+    
+    Return a consolidated brief summary in Russian.
+  `;
+
+  try {
+    const ai = getAI();
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: prompt,
+      config: {
+        systemInstruction: "You are an expert at extracting key insights from therapy sessions. Be concise and professional."
+      }
+    });
+    return response.text?.trim() || currentContext;
+  } catch (error) {
+    console.error("Summarization error:", error);
+    return currentContext;
+  }
+}

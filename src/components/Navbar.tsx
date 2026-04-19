@@ -95,7 +95,13 @@ export const Navbar: React.FC = () => {
             <Languages size={20} />
           </Button>
           <div className="flex items-center gap-2 pl-4 border-l">
-            <img src={user.photoURL || ''} alt={user.displayName || ''} className="w-8 h-8 rounded-full" referrerPolicy="no-referrer" />
+            <img 
+              src={user.photoURL || ''} 
+              alt={user.displayName || ''} 
+              className="w-8 h-8 rounded-full" 
+              referrerPolicy="no-referrer" 
+              crossOrigin="anonymous"
+            />
             <Button variant="ghost" size="icon" onClick={logout}>
               <LogOut size={20} />
             </Button>
