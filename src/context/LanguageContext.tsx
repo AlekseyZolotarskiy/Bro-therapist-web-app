@@ -25,6 +25,8 @@ const translations: Record<Language, Record<string, string>> = {
     'journal.evening_q2': 'Что я чувствую прямо сейчас?',
     'journal.save': 'Сохранить',
     'journal.edit': 'Редактировать',
+    'journal.thoughts': 'Мои мысли',
+    'journal.thoughts_q1': 'О чем я думаю сейчас?',
     'goals.add': 'Добавить цель',
     'goals.title': 'Название цели',
     'goals.deadline': 'Дедлайн',
@@ -46,6 +48,7 @@ const translations: Record<Language, Record<string, string>> = {
     'common.delete': 'Удалить',
     'journal.today': 'Сегодня',
     'journal.history': 'История',
+    'nav.support': 'Поддержать проект',
   },
   en: {
     'app.name': 'Bro Therapist',
@@ -63,6 +66,8 @@ const translations: Record<Language, Record<string, string>> = {
     'journal.evening_q2': 'What do I feel right now?',
     'journal.save': 'Save',
     'journal.edit': 'Edit',
+    'journal.thoughts': 'My thoughts',
+    'journal.thoughts_q1': 'What am I thinking about right now?',
     'goals.add': 'Add Goal',
     'goals.title': 'Goal Title',
     'goals.deadline': 'Deadline',
@@ -84,6 +89,7 @@ const translations: Record<Language, Record<string, string>> = {
     'common.delete': 'Delete',
     'journal.today': 'Today',
     'journal.history': 'History',
+    'nav.support': 'Support project',
   }
 };
 

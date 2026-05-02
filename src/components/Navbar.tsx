@@ -70,7 +70,7 @@ export const Navbar: React.FC = () => {
             className="flex flex-col items-center gap-1 p-2 rounded-xl transition-colors text-pink-500 hover:bg-pink-50 md:hidden"
           >
             <Heart size={20} fill="currentColor" />
-            <span className="text-[10px] font-medium">Support</span>
+            <span className="text-[10px] font-medium leading-[1.1] text-center">{t('nav.support')}</span>
           </button>
           <button
             onClick={logout}
@@ -92,7 +92,7 @@ export const Navbar: React.FC = () => {
             className="text-pink-600 hover:text-pink-700 hover:bg-pink-50 gap-2"
           >
             <Heart size={18} fill="currentColor" />
-            Support
+            {t('nav.support')}
           </Button>
           <Button
             variant="ghost"

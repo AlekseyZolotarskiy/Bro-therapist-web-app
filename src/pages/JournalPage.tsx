@@ -16,8 +16,9 @@ export const JournalPage: React.FC = () => {
   const { user } = useAuth();
   const { t, language } = useLanguage();
   const [morning, setMorning] = useState({ q1: '', q2: '' });
+  const [thoughts, setThoughts] = useState({ q1: '' });
   const [evening, setEvening] = useState({ q1: '', q2: '' });
-  const [editing, setEditing] = useState({ morning: true, evening: true });
+  const [editing, setEditing] = useState({ morning: true, thoughts: true, evening: true });
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [history, setHistory] = useState<string[]>([]);
   const [showHistory, setShowHistory] = useState(false);
@@ -46,24 +47,31 @@ export const JournalPage: React.FC = () => {
       if (snapshot.exists()) {
         const data = snapshot.data();
         setMorning(data.morning || { q1: '', q2: '' });
+        setThoughts(data.thoughts || { q1: '' });
         setEvening(data.evening || { q1: '', q2: '' });
-        setEditing({ morning: false, evening: false });
+        setEditing({ morning: false, thoughts: false, evening: false });
       } else {
         setMorning({ q1: '', q2: '' });
+        setThoughts({ q1: '' });
         setEvening({ q1: '', q2: '' });
-        setEditing({ morning: true, evening: true });
+        setEditing({ morning: true, thoughts: true, evening: true });
       }
     });
 
     return unsubscribe;
   }, [user, dateKey]);
 
-  const handleSave = async (type: 'morning' | 'evening') => {
+  const handleSave = async (type: 'morning' | 'thoughts' | 'evening') => {
     if (!user) return;
     
+    let dataToSave = {};
+    if (type === 'morning') dataToSave = morning;
+    else if (type === 'thoughts') dataToSave = thoughts;
+    else dataToSave = evening;
+
     try {
       await setDoc(doc(db, `users/${user.uid}/journal/${dateKey}`), {
-        [type]: type === 'morning' ? morning : evening,
+        [type]: dataToSave,
         date: dateKey,
       }, { merge: true });
       
@@ -182,6 +190,38 @@ export const JournalPage: React.FC = () => {
               </Button>
             ) : (
               <Button variant="ghost" onClick={() => setEditing(prev => ({ ...prev, morning: true }))} className="gap-2">
+                <Edit2 size={18} />
+                {t('journal.edit')}
+              </Button>
+            )}
+          </div>
+        </div>
+      </section>
+
+      <section className="space-y-4">
+        <div className="flex items-center gap-2 text-indigo-400 mb-2">
+          <Edit2 size={20} />
+          <h2 className="text-lg font-bold">{t('journal.thoughts')}</h2>
+        </div>
+        <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 space-y-6">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700">{t('journal.thoughts_q1')}</label>
+            <textarea
+              value={thoughts.q1}
+              onChange={(e) => setThoughts({ q1: e.target.value })}
+              disabled={!editing.thoughts}
+              className="w-full bg-gray-50 border-none rounded-2xl p-4 text-sm focus:ring-2 focus:ring-indigo-400 transition-all min-h-[120px] resize-none disabled:bg-transparent disabled:px-0"
+              placeholder="..."
+            />
+          </div>
+          <div className="flex justify-end">
+            {editing.thoughts ? (
+              <Button onClick={() => handleSave('thoughts')} className="bg-indigo-400 hover:bg-indigo-500 gap-2">
+                <Save size={18} />
+                {t('journal.save')}
+              </Button>
+            ) : (
+              <Button variant="ghost" onClick={() => setEditing(prev => ({ ...prev, thoughts: true }))} className="gap-2">
                 <Edit2 size={18} />
                 {t('journal.edit')}
               </Button>

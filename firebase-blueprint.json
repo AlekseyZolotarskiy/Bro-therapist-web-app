@@ -44,6 +44,12 @@
             "q1": { "type": "string" },
             "q2": { "type": "string" }
           }
+        },
+        "thoughts": {
+          "type": "object",
+          "properties": {
+            "q1": { "type": "string" }
+          }
         }
       },
       "required": ["date"]

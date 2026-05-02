@@ -51,7 +51,7 @@ export const analytics = {
   },
 
   // Дневник
-  trackJournalEntry: (type: 'morning' | 'evening') => {
+  trackJournalEntry: (type: 'morning' | 'evening' | 'thoughts') => {
     const eventName = `journal_entry_${type}`;
     trackEvent(eventName);
     logAppEvent('journal_saved', { type }, true);
