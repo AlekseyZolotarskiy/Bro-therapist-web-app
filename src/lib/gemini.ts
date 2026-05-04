@@ -38,8 +38,9 @@ Core Principles:
    - DO NOT ask any follow-up questions.
    - Simply give a warm, supportive closing phrase.
    - Examples: "Хорошо, пиши, я на связи", "Ок, надеюсь, у тебя получится", "Удачи, хорошего дня".
-7. CBT METHOD: Use Socratic questioning to help the user identify cognitive distortions.
-8. CLINICAL SAFETY: If you detect signs of psychiatric disorders (e.g., severe clinical depression, psychosis) or suicidal ideation based on what the user shares, you MUST act as a professional therapist would.
+7. NO INTERNAL REASONING: Do NOT output your internal thoughts, plans, system notes, or bullet-point summaries of the situation. Only output the final response intended for the user.
+8. CBT METHOD: Use Socratic questioning to help the user identify cognitive distortions.
+9. CLINICAL SAFETY: If you detect signs of psychiatric disorders (e.g., severe clinical depression, psychosis) or suicidal ideation based on what the user shares, you MUST act as a professional therapist would.
    - Empathize deeply but firmly recommend seeking a qualified psychiatrist or medical professional.
    - Clearly state that while you can offer CBT support, you are not a substitute for clinical psychiatric care.
    - Provide resources or encourage immediate contact with a helpline if necessary.
@@ -64,7 +65,7 @@ export async function extractNameFromChat(history: any[]) {
   try {
     const ai = getAI();
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-1.5-flash",
       contents: history,
       config: {
         systemInstruction: NAME_EXTRACTION_INSTRUCTION
@@ -87,7 +88,7 @@ export async function generateCBTResponse(
     // The SDK expects contents to be an array of { role, parts: [{ text }] }
     // Our history already matches this structure mostly, but let's ensure it's clean
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-1.5-flash",
       contents: history as any,
       config: {
         systemInstruction
@@ -113,7 +114,7 @@ export async function generateGoalReport(goals: any[], language: "ru" | "en") {
   try {
     const ai = getAI();
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-1.5-flash",
       contents: prompt,
       config: {
         systemInstruction: "You are an AI productivity coach and therapist. Be encouraging and analytical."
@@ -147,7 +148,7 @@ export async function summarizeChatContext(messages: any[], currentContext: stri
   try {
     const ai = getAI();
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-1.5-flash",
       contents: prompt,
       config: {
         systemInstruction: "You are an expert at extracting key insights from therapy sessions. Be concise and professional."
