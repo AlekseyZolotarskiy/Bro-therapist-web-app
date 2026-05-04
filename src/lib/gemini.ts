@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, ThinkingLevel } from "@google/genai";
 
 // Lazy initialization to prevent crash on startup if key is missing
 let aiInstance: any = null;
@@ -65,10 +65,11 @@ export async function extractNameFromChat(history: any[]) {
   try {
     const ai = getAI();
     const response = await ai.models.generateContent({
-      model: "gemini-1.5-flash-latest",
+      model: "gemini-3-flash-preview",
       contents: history,
       config: {
-        systemInstruction: NAME_EXTRACTION_INSTRUCTION
+        systemInstruction: NAME_EXTRACTION_INSTRUCTION,
+        thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL }
       }
     });
     const text = response.text?.trim();
@@ -88,10 +89,11 @@ export async function generateCBTResponse(
     // The SDK expects contents to be an array of { role, parts: [{ text }] }
     // Our history already matches this structure mostly, but let's ensure it's clean
     const response = await ai.models.generateContent({
-      model: "gemini-1.5-flash-latest",
+      model: "gemini-3-flash-preview",
       contents: history as any,
       config: {
-        systemInstruction
+        systemInstruction,
+        thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL }
       }
     });
 
@@ -114,10 +116,11 @@ export async function generateGoalReport(goals: any[], language: "ru" | "en") {
   try {
     const ai = getAI();
     const response = await ai.models.generateContent({
-      model: "gemini-1.5-flash-latest",
+      model: "gemini-3-flash-preview",
       contents: prompt,
       config: {
-        systemInstruction: "You are an AI productivity coach and therapist. Be encouraging and analytical."
+        systemInstruction: "You are an AI productivity coach and therapist. Be encouraging and analytical.",
+        thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL }
       }
     });
 
@@ -148,10 +151,11 @@ export async function summarizeChatContext(messages: any[], currentContext: stri
   try {
     const ai = getAI();
     const response = await ai.models.generateContent({
-      model: "gemini-1.5-flash-latest",
+      model: "gemini-3-flash-preview",
       contents: prompt,
       config: {
-        systemInstruction: "You are an expert at extracting key insights from therapy sessions. Be concise and professional."
+        systemInstruction: "You are an expert at extracting key insights from therapy sessions. Be concise and professional.",
+        thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL }
       }
     });
     return response.text?.trim() || currentContext;
