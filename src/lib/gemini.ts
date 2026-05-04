@@ -65,7 +65,7 @@ export async function extractNameFromChat(history: any[]) {
   try {
     const ai = getAI();
     const response = await ai.models.generateContent({
-      model: "gemini-1.5-flash",
+      model: "gemini-1.5-flash-latest",
       contents: history,
       config: {
         systemInstruction: NAME_EXTRACTION_INSTRUCTION
@@ -88,7 +88,7 @@ export async function generateCBTResponse(
     // The SDK expects contents to be an array of { role, parts: [{ text }] }
     // Our history already matches this structure mostly, but let's ensure it's clean
     const response = await ai.models.generateContent({
-      model: "gemini-1.5-flash",
+      model: "gemini-1.5-flash-latest",
       contents: history as any,
       config: {
         systemInstruction
@@ -114,7 +114,7 @@ export async function generateGoalReport(goals: any[], language: "ru" | "en") {
   try {
     const ai = getAI();
     const response = await ai.models.generateContent({
-      model: "gemini-1.5-flash",
+      model: "gemini-1.5-flash-latest",
       contents: prompt,
       config: {
         systemInstruction: "You are an AI productivity coach and therapist. Be encouraging and analytical."
@@ -148,7 +148,7 @@ export async function summarizeChatContext(messages: any[], currentContext: stri
   try {
     const ai = getAI();
     const response = await ai.models.generateContent({
-      model: "gemini-1.5-flash",
+      model: "gemini-1.5-flash-latest",
       contents: prompt,
       config: {
         systemInstruction: "You are an expert at extracting key insights from therapy sessions. Be concise and professional."
